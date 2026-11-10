@@ -1,0 +1,310 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --font-heading: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Poppins", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+  }
+}:root {
+  --page-bg: #B91C1C;      --navbar-bg: #B91C1C;
+  --surface: #FFFBEB;      --surface-alt: #FFFDF0;     --white: #FFFFFF;
+  --text: #2D2926;         --text-muted: #6B6357;      --text-faint: #9A8F7A;
+  --accent-text: #B91C1C;  --on-yellow: #2D2926;       --btn-solid: #2D2926;
+  --border-cream: #F0E6C5;
+  --ok-bg: #D1FAE5;   --ok-text: #065F46;
+  --warn-bg: #FEF3C7; --warn-text: #92400E;
+  --bad-bg: #FEE2E2;  --bad-text: #991B1B;
+}
+
+.dark {
+  color-scheme: dark;
+  --page-bg: #1B1614;      --navbar-bg: #7A1818;
+  --surface: #27201C;      --surface-alt: #221B18;     --white: #352C27;
+  --text: #F2E9DA;         --text-muted: #CBBDA6;      --text-faint: #A89B86;
+  --accent-text: #F0897F;  --on-yellow: #2D2926;       --btn-solid: #B91C1C;
+  --border-cream: #403631;
+  --ok-bg: #143D2E;   --ok-text: #86E0B7;
+  --warn-bg: #4A3512; --warn-text: #F2C766;
+  --bad-bg: #4D2020;  --bad-text: #F4A6A6;
+}
+
+/* =====================================================================
+   FIA'O · Android
+   Todo lo de abajo cuelga de html.is-native (la clase la agrega main.jsx
+   solo dentro de la app). En la web nada de esto se aplica.
+   ===================================================================== */
+html.is-native {
+  --sat: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sab: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --dock-h: 64px;
+  --dock-bg: #2D2926;
+  --dock-fg: #F4EAD5;
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  overflow-x: hidden;
+  background-color: var(--page-bg);
+}
+html.is-native.dark { --dock-bg: #3A302B; }
+html.is-native body {
+  background-color: var(--page-bg);
+  -webkit-touch-callout: none;
+}
+html.is-native h1, html.is-native h2, html.is-native h3, html.is-native p, html.is-native button, html.is-native nav, html.is-native header {
+  -webkit-user-select: none; user-select: none;
+}
+html.is-native input, html.is-native textarea, html.is-native select { -webkit-user-select: text; user-select: text; font-size: 16px; }
+
+/* Espacio para que la barra inferior no tape contenido */
+html.is-native.has-dock main { padding-bottom: calc(var(--dock-h) + var(--sab) + 34px); }
+html.is-native main h1 { font-size: 1.75rem; line-height: 1.12; letter-spacing: -0.02em; }
+html.is-native main > div { padding-top: 1rem; padding-bottom: 1rem; }
+
+/* Botones cómodos de tocar + respuesta al pulsar */
+html.is-native main button:not([class*="w-8"]):not([class*="w-9"]):not([class*="w-4"]):not([class*="w-5"]) { min-height: 40px; }
+html.is-native button, html.is-native a { transition: transform 0.12s var(--ease-out), opacity 0.15s; }
+html.is-native button:active:not(:disabled), html.is-native a:active { transform: scale(0.97); }
+
+/* Cada pantalla entra con un suave deslizamiento */
+html.is-native main { animation: fiao-rise 0.34s var(--ease-out) both; }
+html.is-native main h1 { animation: fiao-rise 0.4s var(--ease-out) both; }
+
+/* ---- Barra superior ---- */
+.fiao-topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(var(--sat) + 10px) 16px 12px;
+  background-color: var(--navbar-bg);
+  border-radius: 0 0 26px 26px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+}
+.fiao-chip {
+  height: 36px; min-width: 40px; padding: 0 10px; border-radius: 9999px;
+  font-size: 12px; font-weight: 800; color: #fff; letter-spacing: 0.04em;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+}
+.fiao-icon-btn { width: 40px; height: 40px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; }
+html.is-native [data-tour="bell"] > button { width: 40px; height: 40px; }
+html.is-native [data-tour="bell"] > button svg { width: 22px; height: 22px; }
+/* Panel de avisos: a lo ancho, bajo la barra */
+html.is-native [data-tour="bell"] [role="dialog"] {
+  position: fixed; left: 12px; right: 12px; top: calc(var(--sat) + 66px);
+  width: auto; max-height: 60vh; overflow-y: auto; margin: 0; z-index: 60;
+  border-radius: 24px;
+}
+
+/* ---- Barra inferior flotante ---- */
+.fiao-dock {
+  position: fixed; left: 12px; right: 12px; bottom: calc(var(--sab) + 10px); z-index: 40;
+  display: flex; align-items: center; gap: 4px; padding: 6px;
+  border-radius: 32px; background-color: var(--dock-bg);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  transition: transform 0.3s var(--ease-out), opacity 0.2s;
+  animation: fiao-dock-in 0.5s var(--ease-out) both;
+}
+.fiao-tab {
+  flex: 1 1 0; min-width: 0; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 26px; color: var(--dock-fg); opacity: 0.7;
+  transition: flex-grow 0.38s cubic-bezier(0.3, 1.25, 0.4, 1), background-color 0.25s, color 0.25s, opacity 0.2s, transform 0.12s;
+}
+.fiao-tab.is-active { flex-grow: 2.7; background-color: #F9D103; color: #2D2926; opacity: 1; gap: 6px; }
+.fiao-tab-label {
+  max-width: 0; opacity: 0; overflow: hidden; white-space: nowrap;
+  font-size: 13px; font-weight: 800; letter-spacing: -0.01em;
+  transition: max-width 0.38s var(--ease-out), opacity 0.2s;
+}
+.fiao-tab.is-active .fiao-tab-label { max-width: 86px; opacity: 1; }
+html[data-kb] .fiao-dock { transform: translateY(calc(100% + 40px)); opacity: 0; pointer-events: none; }
+html[data-kb] [data-tour="clients-new"] { opacity: 0; pointer-events: none; }
+
+/* ---- Hojas inferiores (Más, confirmaciones y ventanas de Clientes/Productos) ---- */
+.fiao-sheet-backdrop {
+  position: fixed; inset: 0; z-index: 60; display: flex; align-items: flex-end;
+  background-color: rgba(0, 0, 0, 0.5); animation: fiao-fade 0.2s both;
+}
+.fiao-sheet {
+  width: 100%; max-height: calc(100dvh - var(--sat) - 24px); overflow-y: auto;
+  padding: 10px 20px calc(24px + var(--sab));
+  border-radius: 30px 30px 0 0; background-color: var(--white);
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3); animation: fiao-sheet 0.34s var(--ease-out) both;
+}
+.fiao-grab { display: block; width: 42px; height: 5px; border-radius: 9999px; margin: 0 auto 14px; background-color: var(--border-cream); }
+.fiao-sheet-title { font-family: Poppins, sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--text); margin-bottom: 16px; }
+html.is-native .fixed.inset-0:has(> [role="dialog"]) { align-items: flex-end !important; padding: 0 !important; animation: fiao-fade 0.2s both; }
+html.is-native .fixed.inset-0 > [role="dialog"] {
+  max-width: 100% !important; width: 100%;
+  max-height: calc(100dvh - var(--sat) - 24px) !important;
+  border-radius: 30px 30px 0 0 !important;
+  padding-bottom: calc(1.5rem + var(--sab)) !important;
+  animation: fiao-sheet 0.34s var(--ease-out) both;
+}
+html.is-native .fixed.inset-0 > [role="dialog"]::before {
+  content: ""; display: block; width: 42px; height: 5px; border-radius: 9999px;
+  margin: -6px auto 16px; background-color: var(--border-cream);
+}
+.fiao-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 6px;
+  border-radius: 22px; background-color: var(--surface); border: 1px solid var(--border-cream);
+}
+.fiao-tile-icon { width: 42px; height: 42px; border-radius: 14px; display: flex; align-items: center; justify-content: center; background-color: #B91C1C; flex-shrink: 0; }
+.fiao-row {
+  width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 52px;
+  border-radius: 18px; background-color: var(--surface); border: 1px solid var(--border-cream);
+  font-size: 14px; font-weight: 600; color: var(--text);
+}
+.fiao-btn { height: 50px; border-radius: 9999px; font-weight: 800; font-size: 14px; }
+.fiao-btn-ghost { background-color: var(--surface); color: var(--text); border: 1px solid var(--border-cream); }
+.fiao-toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 90;
+  bottom: calc(var(--dock-h) + var(--sab) + 30px);
+  padding: 10px 18px; border-radius: 9999px; font-size: 13px; font-weight: 700;
+  background-color: #2D2926; color: #fff; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
+  animation: fiao-rise 0.25s var(--ease-out) both;
+}
+
+/* ---- Identidad: libreta de fiados (puntadas, resaltador, tarjetas) ---- */
+.fiao-hero { border-radius: 30px; padding: 22px 20px 20px; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.18); animation: fiao-rise 0.5s var(--ease-out) 0.05s both; }
+.fiao-stitch { position: relative; }
+.fiao-stitch::after {
+  content: ""; position: absolute; inset: 8px; border-radius: 23px; pointer-events: none;
+  border: 1.5px dashed rgba(185, 28, 28, 0.28);
+}
+.dark .fiao-stitch::after { border-color: rgba(240, 137, 127, 0.3); }
+.fiao-marker { background: linear-gradient(transparent 60%, rgba(249, 209, 3, 0.9) 60%, rgba(249, 209, 3, 0.9) 92%, transparent 92%); padding: 0 0.12em; }
+.fiao-snap { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 6px; scrollbar-width: none; }
+.fiao-snap::-webkit-scrollbar { display: none; }
+.fiao-debtor { flex: 0 0 76%; scroll-snap-align: start; border-radius: 26px; padding: 16px; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); }
+.fiao-quick { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 24px; min-height: 68px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); }
+.fiao-client { padding: 14px 16px; border-radius: 24px; background-color: var(--surface); border: 1px solid var(--border-cream); animation: fiao-rise 0.4s var(--ease-out) both; }
+.fiao-skeleton { animation: fiao-pulse 1.2s ease-in-out infinite; }
+.fiao-pop { animation: fiao-pop 0.6s var(--ease-out) both; }
+
+/* ---- Ajustes por pantalla ---- */
+html.is-native [data-tour="clients-filters"] { flex-wrap: nowrap !important; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
+html.is-native [data-tour="clients-filters"]::-webkit-scrollbar { display: none; }
+html.is-native [data-tour="clients-filters"] > button { flex-shrink: 0; white-space: nowrap; }
+html.is-native [data-tour="clients-main"], html.is-native [data-tour="clients-collections"] { padding: 18px !important; border-radius: 28px !important; }
+html.is-native [data-tour="products-content"] { padding: 16px !important; border-radius: 28px !important; }
+/* "Nuevo cliente" pasa a botón flotante sobre la barra inferior */
+html.is-native [data-tour="clients-new"] {
+  position: fixed; right: 16px; bottom: calc(var(--dock-h) + var(--sab) + 28px); z-index: 35;
+  height: 52px; padding: 0 22px; box-shadow: 0 12px 26px rgba(0, 0, 0, 0.35); transition: opacity 0.2s, transform 0.12s;
+}
+
+@keyframes fiao-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes fiao-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fiao-sheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes fiao-dock-in { from { transform: translateY(120%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fiao-pulse { 50% { opacity: 0.45; } }
+@keyframes fiao-pop { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  html.is-native *, html.is-native *::before, html.is-native *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ---- Pantallas de acceso (Android) ---- */
+.fiao-auth { min-height: 100dvh; display: flex; flex-direction: column; background-color: var(--page-bg); }
+.fiao-auth-hero {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  padding: calc(var(--sat) + 28px) 24px 56px; max-height: 260px; overflow: hidden;
+  transition: padding 0.3s var(--ease-out), max-height 0.3s var(--ease-out);
+}
+.fiao-auth-logo { height: 64px; width: auto; transition: height 0.3s var(--ease-out); animation: fiao-pop 0.6s var(--ease-out) both; }
+.fiao-auth-back {
+  position: absolute; left: 14px; top: calc(var(--sat) + 12px); width: 44px; height: 44px; border-radius: 9999px;
+  display: flex; align-items: center; justify-content: center; color: #fff; background-color: rgba(255, 255, 255, 0.16);
+}
+.fiao-auth-panel {
+  flex: 1; margin-top: -30px; padding: 26px 22px calc(26px + var(--sab));
+  border-radius: 32px 32px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.2);
+  animation: fiao-rise 0.5s var(--ease-out) 0.05s both;
+}
+/* Con el teclado abierto la cabecera se encoge para dejar sitio al formulario */
+html[data-kb] .fiao-auth-hero { padding-top: calc(var(--sat) + 12px); padding-bottom: 40px; }
+html[data-kb] .fiao-auth-logo { height: 36px; }
+html.is-native .fiao-auth-panel input { height: 52px; font-size: 16px; }
+html.is-native .fiao-auth-panel button[type="submit"] { height: 52px; font-size: 16px; border-radius: 9999px; }

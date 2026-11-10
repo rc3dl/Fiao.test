@@ -1,0 +1,21 @@
+
+{
+  "name": "FIA'O",
+  "short_name": "FIA'O",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#B91C1C",
+  "theme_color": "#B91C1C",
+  "icons": [
+    {
+      "src": "./Logo-fiao-1024x1024.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    },
+    {
+      "src": "./Logo-fiao-64x64.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
