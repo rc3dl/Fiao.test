@@ -106,7 +106,7 @@ Create a file named `.env.local` in the project root (next to `package.json`):
 ```bash
 VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
-VITE_ENABLE_GOOGLE=false
+VITE_ENABLE_GOOGLE=true
 ```
 
 This file is ignored by Git. Never commit it.
