@@ -31,6 +31,7 @@ export const TOUR_STEPS = [
     body:
       "This guided tour walks you through every screen: **what it shows** and **how to use it**. It takes about five minutes and you can leave at any moment.",
     tip: "You can replay it later with the ? button in the top bar, either the full tour or just the page you're on.",
+    nativeTip: "You can replay it later from More (bottom right) or from Profile, either the full tour or just the page you're on.",
   },
 
   // --------------------------------------------------------------- Navigation
@@ -46,6 +47,8 @@ export const TOUR_STEPS = [
       "Move between the main areas: **Home** (your dashboard), **Credit**, **Products**, **Clients**, **Reports** and **Contact**. The yellow tab is the page you're on.",
     mobileBody:
       "Open this menu to move between **Home**, **Credit**, **Products**, **Clients**, **Reports**, **Contact** and your **Profile**. The yellow option is the page you're on.",
+    nativeBody:
+      "Use this bar to move between **Home**, **Credit**, **Clients** and **Products**. **More** opens Reports, Contact, your Profile and settings. The yellow option is the page you're on.",
   },
   {
     id: "bell",
@@ -467,5 +470,6 @@ export const TOUR_STEPS = [
     body:
       "A simple routine:\n\n**1.** Add your customers.\n\n**2.** Register credits and payments as they happen.\n\n**3.** Check the dashboard every day to see who to collect.",
     tip: "Replay the tour any time with the ? button in the top bar.",
+    nativeTip: "Replay the tour any time from More.",
   },
 ];

@@ -1,6 +1,6 @@
 
 import { supabase } from "@/api/supabaseClient";
-import { SUPABASE_CONFIGURED, APP_URL } from "@/lib/env";
+import { SUPABASE_CONFIGURED, APP_URL, NATIVE_REDIRECT } from "@/lib/env";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 
@@ -51,7 +51,14 @@ export const base44 = {
         phone: p?.phone || "",
         address: p?.address || "",
         ruc: p?.ruc || "",
+        tour_seen: Boolean(u.user_metadata?.fiao_tour_v1), // el tutorial ya se mostró a esta cuenta (en cualquier dispositivo)
       };
+    },
+
+    // Guarda en la cuenta (metadatos de Supabase Auth, sin tocar tablas) que el tutorial ya se mostró.
+    async markTourSeen() {
+      const { error } = await supabase.auth.updateUser({ data: { fiao_tour_v1: true } });
+      fail(error);
     },
 
     async updateMe(fields) {
@@ -167,6 +174,19 @@ export const base44 = {
     },
 
     async loginWithProvider(provider, returnTo = "/dashboard") {
+      assertReady();
+      if (IS_NATIVE) {
+        // Android: Google no permite iniciar sesión dentro de un WebView. Se abre el navegador del sistema
+        // y Supabase devuelve a la app por NATIVE_REDIRECT (lo recibe src/native/native.js).
+        const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+          provider,
+          options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true },
+        });
+        fail(oauthError);
+        const { Browser } = await import("@capacitor/browser");
+        await Browser.open({ url: data.url });
+        return;
+      }
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {

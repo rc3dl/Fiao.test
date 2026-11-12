@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { base44 } from "@/api/authClient";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { isProfileComplete } from "@/lib/settings";
 import { TOUR_STEPS } from "@/tour/tourSteps";
@@ -9,6 +10,12 @@ import TourOverlay from "@/tour/TourOverlay";
 
 const TourContext = createContext(null);
 const PAGES_WITH_TOUR = pagesWithTour(TOUR_STEPS);
+// Recuerda que el tutorial ya se mostró: en este dispositivo y en la cuenta (así no sale en otro teléfono ni tras reinstalar)
+function rememberSeen(userId) {
+  markTourSeen(userId);
+  base44.auth.markTourSeen().catch(() => {});
+}
+
 const AUTO_START_DELAY = 1200; // da tiempo a que cargue el Dashboard antes de abrir la bienvenida
 
 // Lo que usan los demás componentes: el botón "?" y la fila de Profile.
@@ -45,7 +52,7 @@ export default function TourProvider({ children }) {
   // Cerrar (o terminar): se recuerda que esta persona ya lo vio para no volver a abrirlo sola
   const stop = useCallback(() => {
     setSession(null);
-    if (userId) markTourSeen(userId);
+    if (userId) rememberSeen(userId);
   }, [userId]);
 
   const next = useCallback(() => {
@@ -86,17 +93,20 @@ export default function TourProvider({ children }) {
     if (location.pathname !== "/dashboard") return undefined;
     if (autoTriedUsers.current.has(userId)) return undefined;
 
-    if (hasSeenTour(userId)) {
+    // Ya lo vio en este dispositivo o en cualquier otro (queda guardado en la cuenta)
+    if (user?.tour_seen || hasSeenTour(userId)) {
       autoTriedUsers.current.add(userId);
+      if (!user?.tour_seen || !hasSeenTour(userId)) rememberSeen(userId); // sincroniza dispositivo y cuenta
       return undefined;
     }
 
     autoTimer.current = setTimeout(() => {
       autoTriedUsers.current.add(userId);
+      rememberSeen(userId); // se recuerda al abrirse (no al terminar): así no vuelve a salir solo aunque se cierre la app
       start("all");
     }, AUTO_START_DELAY);
     return () => clearTimeout(autoTimer.current);
-  }, [isLoadingAuth, canTour, userId, location.pathname, start]);
+  }, [isLoadingAuth, canTour, userId, user?.tour_seen, location.pathname, start]);
   useEffect(() => () => clearTimeout(autoTimer.current), []);
 
   const value = useMemo(

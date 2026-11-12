@@ -43,7 +43,7 @@ export default function MobileDashboard({ name, isLoading, isError, error, refet
             <TrendingUp className="w-3.5 h-3.5" style={{ color: "var(--accent-text)" }} />
             {t("Outstanding Debt")}
           </p>
-          <p className={`mt-2 font-extrabold leading-none ${isLoading ? "fiao-skeleton" : ""}`} style={{ fontSize: "2.6rem", color: "var(--text)", fontFamily: "Poppins" }}>
+          <p className={`mt-2 font-extrabold leading-none ${isLoading ? "fiao-skeleton" : ""}`} style={{ fontSize: "clamp(1.7rem, 8.6vw, 2.4rem)", color: "var(--text)", fontFamily: "Poppins" }}>
             <span className="fiao-marker">{waiting ? "—" : money(overview.outstanding)}</span>
           </p>
           {!waiting && overview.overdueCustomers > 0 && (

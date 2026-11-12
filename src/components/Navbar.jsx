@@ -8,7 +8,6 @@ import NotificationBell from "@/components/NotificationBell";
 import { TourButton, TourMobileItems } from "@/tour/TourButton";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
-import MobileTopBar from "@/native/MobileTopBar";
 const NAV_ITEMS = [
   { key: "home", path: "/", authPath: "/dashboard" },
   { key: "credit", path: "/credit", authPath: "/credit" },
@@ -47,8 +46,8 @@ export default function Navbar() {
 
   const homePath = isAuthenticated ? "/dashboard" : "/";
 
-  // Android: barra superior compacta (la navegación está abajo).
-  if (IS_NATIVE) return <MobileTopBar />;
+  // Android: sin barra superior. La navegación va abajo (MobileShell) y la campana está en el Dashboard.
+  if (IS_NATIVE) return null;
 
   return (
     <header

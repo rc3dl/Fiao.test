@@ -27,6 +27,7 @@ export default function AuthLayout({
             </Link>
           )}
           <img src={withBase("/Logo-fiao-300x100.svg")} alt="FIA'O" className="fiao-auth-logo select-none" draggable={false} />
+          <p className="fiao-auth-tagline">{t("Your credit notebook, now digital.")}</p>
         </div>
         <div className="fiao-auth-panel bg-card">
           <div className="flex items-center gap-3 mb-6">

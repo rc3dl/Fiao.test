@@ -106,7 +106,7 @@ Create a file named `.env.local` in the project root (next to `package.json`):
 ```bash
 VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
-VITE_ENABLE_GOOGLE=true
+VITE_ENABLE_GOOGLE=false
 ```
 
 This file is ignored by Git. Never commit it.
@@ -197,7 +197,7 @@ Sign up with a real email address, enter the 6-digit code, complete the Setup sc
 |---|---|---|
 | `VITE_SUPABASE_URL` | Yes | Project URL of your Supabase project. |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Public anon (or publishable) key. Safe for the browser because Row Level Security protects the data. |
-| `VITE_ENABLE_GOOGLE` | No | `true` shows the Google sign-in button on the web. Default `false`. It is always hidden in the Android app. |
+| `VITE_ENABLE_GOOGLE` | No | `true` shows the Google sign-in button (web and Android app). Default `false`. |
 | `VITE_APP_URL` | No | Public address of the web (for example `https://YOUR-USER.github.io/Fia-O`). The Android app uses it for links that open outside the app, such as password reset. |
 | `VITE_BASE` | No | Overrides the publishing path. By default it is `/` locally and in Vercel, and `/Fia-O/` in GitHub Pages. |
 
@@ -220,7 +220,20 @@ The Android app wraps the same React code. Everything that is specific to Androi
 3. `npm run android` (builds with `--mode android` and runs `cap sync android`).
 4. `npx cap open android`, then **Build → Build APK(s)**. The test APK is `android/app/build/outputs/apk/debug/app-debug.apk`.
 
-After adding or updating Capacitor plugins, run `npm run android` again. Google sign-in is not available inside the app (Google blocks WebViews), so the app uses email and password. In Supabase, add the web address (`VITE_APP_URL`) to **Authentication → URL Configuration → Redirect URLs** so the password reset link works.
+After adding or updating Capacitor plugins, run `npm run android` again.
+
+**Supabase settings for the app.** In **Authentication → URL Configuration → Redirect URLs** add:
+
+- the web address (`VITE_APP_URL`), so the password reset link works;
+- `com.fiao.panama://auth`, so Google sign-in can return to the app.
+
+**Google sign-in on Android.** Google does not allow sign-in inside a WebView, so the app opens the system browser and comes back through the `com.fiao.panama://auth` link (declared in `AndroidManifest.xml` and handled in `src/native/native.js`). Set `VITE_ENABLE_GOOGLE=true` in `.env.local` to show the button. No change is needed in Google Cloud: it uses the same Supabase callback as the web.
+
+**Notifications.** The bell stays fixed at the top-right corner of every screen. The app also schedules one local Android notification at 9:00 when there are overdue accounts or low-stock products (the same alerts as the bell, and only if alerts are on in Profile). It is rescheduled every time the app is opened and cancelled on sign-out. It cannot know about changes made while the app stays closed: that would need a server (push notifications with Firebase). Android asks for the notification permission the first time.
+
+**WhatsApp reminder.** The button opens the `wa.me` link, which Android hands to the WhatsApp app with the chat and the message ready to send (same text as the web).
+
+**Tutorial.** It opens by itself only the first time an account signs in. That is remembered in the account (Supabase Auth user metadata, no table change) and on the device, so it does not come back on another phone or after reinstalling.
 
 ## Deploying to Vercel
 

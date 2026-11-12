@@ -54,11 +54,13 @@ const STEPS_ES = {
     title: "¡Te damos la bienvenida a FIA'O! 👋",
     body: "Este recorrido guiado te muestra cada pantalla: **qué contiene** y **cómo utilizarla**. Dura unos cinco minutos y puedes salir cuando quieras.",
     tip: "Puedes repetirlo cuando quieras desde el botón ? de la barra superior, ya sea completo o solo para la página actual.",
+    nativeTip: "Puedes repetirlo cuando quieras desde Más (abajo a la derecha) o desde Perfil, ya sea completo o solo para la página actual.",
   },
   "nav-links": {
     title: "Barra de navegación",
     body: "Desde aquí puedes entrar a las secciones principales: **Inicio** (tu panel), **Créditos**, **Productos**, **Clientes**, **Informes** y **Contacto**. La pestaña amarilla indica dónde estás.",
     mobileBody: "Abre este menú para ir a **Inicio**, **Créditos**, **Productos**, **Clientes**, **Informes**, **Contacto** y tu **Perfil**. La opción amarilla indica la página actual.",
+    nativeBody: "Con esta barra te mueves entre **Inicio**, **Créditos**, **Clientes** y **Productos**. **Más** abre Informes, Contacto, tu Perfil y los ajustes. La opción amarilla indica la página actual.",
   },
   bell: {
     title: "Notificaciones",
@@ -228,6 +230,7 @@ const STEPS_ES = {
     title: "¡Ya estás listo para comenzar! 🎉",
     body: "Una rutina sencilla:\n\n**1.** Agrega tus clientes.\n\n**2.** Registra los fiados y pagos a medida que ocurren.\n\n**3.** Revisa el panel principal todos los días para saber a quién cobrar.",
     tip: "Puedes repetir el recorrido cuando quieras con el botón ? de la barra superior.",
+    nativeTip: "Puedes repetir el recorrido cuando quieras desde Más.",
   },
 };
 
@@ -244,6 +247,8 @@ export function localizeTourStep(step, language = "en") {
     title: translated.title || step.title,
     body: translated.body || step.body,
     mobileBody: translated.mobileBody || step.mobileBody,
+    nativeBody: translated.nativeBody || step.nativeBody,
+    nativeTip: translated.nativeTip || step.nativeTip,
     missingBody: translated.missingBody || step.missingBody,
     tip: translated.tip || step.tip,
     fallback: step.fallback

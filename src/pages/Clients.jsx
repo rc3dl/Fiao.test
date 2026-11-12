@@ -9,6 +9,7 @@ import { money, initials, validatePhone, waLink, reminderText } from "@/lib/cred
 import { useLanguage } from "@/contexts/LanguageContext";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { confirmAction } from "@/native/confirm";
+import { openExternal } from "@/native/openExternal";
 
 const FILTERS = ["All", "On Time", "Pending", "Overdue"];
 
@@ -248,7 +249,7 @@ export default function Clients() {
 
   const sendReminder = () => {
     if (!target || !link) return;
-    window.open(link, "_blank", "noopener"); // se abre primero para que el navegador no lo bloquee
+    openExternal(link); // se abre primero para que el navegador no lo bloquee
     reminder.mutate({ client_id: target.id, message });
   };
 

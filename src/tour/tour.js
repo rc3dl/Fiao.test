@@ -100,9 +100,17 @@ const clamp = (n, min, max) => Math.min(Math.max(n, min), Math.max(min, max));
 //   { mode: "center" }                        tarjeta en el centro (pasos sin elemento)
 //   { mode: "dock" }                          tarjeta pegada abajo (celulares o elementos enormes)
 //   { mode: "float", side, top, left, width, arrow }   tarjeta junto al elemento
-export function computePlacement({ rect, tip, vw, vh, prefer = "bottom", gap = 16, margin = 12 }) {
+export function computePlacement({ rect, tip, vw, vh, prefer = "bottom", gap = 16, margin = 12, insetTop = 0, insetBottom = 0, dockSide }) {
   if (!rect) return { mode: "center" };
-  if (vw < DOCK_MAX_WIDTH) return { mode: "dock" };
+  if (vw < DOCK_MAX_WIDTH) {
+    // Celular: la tarjeta va pegada abajo o arriba, del lado donde NO está el elemento señalado
+    const need = tip.h + margin * 2;
+    const below = vh - (rect.top + rect.height) - insetBottom;
+    const above = rect.top - insetTop;
+    // si no cabe en ninguno (elemento muy alto), abajo: la página se desplaza para que empiece arriba
+    const side = dockSide ?? (below >= need ? "bottom" : above >= need ? "top" : "bottom");
+    return { mode: "dock", side };
+  }
 
   const w = Math.min(tip.w, vw - margin * 2);
   const h = tip.h;
@@ -141,15 +149,4 @@ export function computePlacement({ rect, tip, vw, vh, prefer = "bottom", gap = 1
     };
   }
   return { mode: "dock" };
-}
-
-// Ajuste de desplazamiento: si la tarjeta va pegada abajo, el elemento debe quedar en la parte de arriba.
-// Devuelve cuántos píxeles hay que desplazar la página (positivo = bajar) o 0 si ya se ve bien.
-export function dockScrollDelta({ rect, vh, dockHeight, topOffset = 88, margin = 16 }) {
-  if (!rect) return 0;
-  const usable = vh - dockHeight - margin;
-  const bottom = rect.top + rect.height;
-  if (rect.top >= topOffset - 4 && bottom <= usable) return 0; // ya se ve completo encima de la tarjeta
-  if (rect.height <= usable - topOffset) return Math.round(rect.top - topOffset); // cabe: lo subimos
-  return Math.round(rect.top - 24); // es muy alto: lo dejamos empezando arriba
 }

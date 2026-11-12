@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   computePlacement,
-  dockScrollDelta,
   parseRichText,
   progressPercent,
   stepBody,
@@ -10,6 +9,7 @@ import {
   DOCK_MAX_WIDTH,
 } from "@/tour/tour";
 import { getTourUi, localizeTourStep } from "@/tour/tourTranslations";
+import { IS_NATIVE } from "@/native/useIsNative";
 
 const PAD = 8; // espacio entre el elemento y el borde amarillo
 const CARD_WIDTH = 380; // ancho de la tarjeta (el mismo flotando o pegada abajo)
@@ -35,6 +35,20 @@ function findTourElement(id) {
   if (!id) return null;
   for (const el of document.querySelectorAll(`[data-tour="${id}"]`)) if (isVisible(el)) return el;
   return null;
+}
+
+// Zona segura del sistema (barra de estado / de gestos) en px; vale 0 fuera de la app Android
+// ¿El elemento queda fijo en pantalla aunque la página se desplace? (barra pegajosa, botón flotante, barra inferior)
+function isPinned(node) {
+  for (let el = node; el && el !== document.body; el = el.parentElement) {
+    const position = getComputedStyle(el).position;
+    if (position === "fixed" || position === "sticky") return true;
+  }
+  return false;
+}
+
+function readInset(name) {
+  return parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name)) || 0;
 }
 
 function usePrefersReducedMotion() {
@@ -84,10 +98,12 @@ const Bulb = () => (
 
 const CSS = `
 @keyframes fiaoTourIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes fiaoTourInTop { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
 @keyframes fiaoTourFade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fiaoTourRing { 0% { opacity: .75; transform: scale(1); } 100% { opacity: 0; transform: scale(1.06); } }
 @keyframes fiaoTourSpin { to { transform: rotate(360deg); } }
 .fiao-tour-card { animation: fiaoTourIn .24s ease-out both; }
+.fiao-tour-card[data-side="top"] { animation-name: fiaoTourInTop; }
 .fiao-tour-loader { animation: fiaoTourFade .2s ease .4s both; }
 .fiao-tour-ring { animation: fiaoTourRing 1.8s ease-out infinite; }
 .fiao-tour-btn { transition: transform .12s ease, filter .12s ease, background-color .12s ease; cursor: pointer; font-family: inherit; }
@@ -190,20 +206,14 @@ export default function TourOverlay({ step, index, total, pathname, language = "
           prev.stepId === step.id && prev.status === "found" && prev.fallback === usingFallback && prev.radius === radius && prev.rect &&
           Math.abs(prev.rect.top - rect.top) < 0.5 && Math.abs(prev.rect.left - rect.left) < 0.5 &&
           Math.abs(prev.rect.width - rect.width) < 0.5 && Math.abs(prev.rect.height - rect.height) < 0.5;
-        return same ? prev : { stepId: step.id, status: "found", radius, fallback: usingFallback, rect };
+        return same ? prev : { stepId: step.id, status: "found", radius, fallback: usingFallback, rect, pinned: isPinned(element) };
       });
     };
 
     const reveal = (node) => {
       element = node;
       node.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" });
-      // Si la tarjeta va pegada abajo, el elemento debe quedar arriba de ella
-      if (window.innerWidth < DOCK_MAX_WIDTH) {
-        const r = node.getBoundingClientRect();
-        const dockHeight = (cardRef.current?.offsetHeight || 260) + 24;
-        const delta = dockScrollDelta({ rect: { top: r.top - PAD, height: r.height + PAD * 2 }, vh: window.innerHeight, dockHeight });
-        if (delta) window.scrollBy(0, delta);
-      }
+      // (En celular, después se acomoda la página para que el elemento quede libre de la tarjeta: ver más abajo)
       measure();
       if (!element) return; // la página lo quitó justo ahora: ya se está buscando de nuevo
       resizeObserver = new ResizeObserver(scheduleMeasure);
@@ -290,6 +300,21 @@ export default function TourOverlay({ step, index, total, pathname, language = "
     if (Math.abs(h - cardHeight) > 1.5) setCardHeight(h);
   });
 
+  // Celular: la tarjeta va pegada abajo (arriba solo si el elemento está fijo en la parte baja, como la barra inferior).
+  // La página se desplaza para que el elemento quede siempre en la zona libre, sin quedar tapado por la tarjeta.
+  useEffect(() => {
+    if (!docked || view.status !== "found" || !view.rect || view.pinned) return;
+    const header = document.querySelector("header");
+    const headerBottom = header && ["sticky", "fixed"].includes(getComputedStyle(header).position) ? header.getBoundingClientRect().bottom : 0;
+    const top = Math.max(readInset("--sat"), headerBottom) + 12;
+    const bottom = vp.h - readInset("--sab") - cardHeight - 12 - 16; // 12 = margen de la tarjeta, 16 = un poco de aire
+    const { top: t, height: h } = view.rect;
+    if (t >= top && t + h <= bottom) return;
+    const free = bottom - top;
+    const delta = h <= free ? t - (top + (free - h) / 2) : t - top;
+    if (Math.abs(delta) > 2) window.scrollBy(0, delta);
+  }, [docked, view.status, view.rect?.top, view.rect?.height, view.pinned, cardHeight, vp.h]);
+
   // Teclado: flechas, Escape y Tab dentro de la tarjeta
   useEffect(() => {
     const onKey = (e) => {
@@ -340,8 +365,10 @@ export default function TourOverlay({ step, index, total, pathname, language = "
   const missing = view.status === "missing";
   const content = {
     title: alt?.title ?? displayStep.title,
-    body: alt?.body ?? (missing && displayStep.missingBody ? displayStep.missingBody : stepBody(displayStep, mobile)),
-    tip: alt ? undefined : displayStep.tip,
+    body:
+      alt?.body ??
+      (missing && displayStep.missingBody ? displayStep.missingBody : IS_NATIVE && displayStep.nativeBody ? displayStep.nativeBody : stepBody(displayStep, mobile)),
+    tip: alt ? undefined : IS_NATIVE && displayStep.nativeTip ? displayStep.nativeTip : displayStep.tip,
   };
   const placement = computePlacement({
     rect: view.status === "found" ? view.rect : null,
@@ -349,6 +376,9 @@ export default function TourOverlay({ step, index, total, pathname, language = "
     vw: vp.w,
     vh: vp.h,
     prefer: step.placement ?? "bottom",
+    insetTop: readInset("--sat"),
+    insetBottom: readInset("--sab"),
+    dockSide: view.status === "found" && view.pinned && view.rect.top + view.rect.height / 2 > vp.h / 2 ? "top" : "bottom",
   });
   const searching = view.status === "searching";
 
@@ -367,7 +397,11 @@ export default function TourOverlay({ step, index, total, pathname, language = "
   if (placement.mode === "float") {
     cardStyle = { ...cardBase, position: "absolute", top: placement.top, left: placement.left, width: placement.width };
   } else if (placement.mode === "dock") {
-    cardStyle = { ...cardBase, position: "absolute", left: 12, right: 12, bottom: 12, margin: "0 auto", width: `min(${CARD_WIDTH}px, calc(100vw - 24px))`, maxHeight: "calc(100vh - 24px)", overflowY: "auto" };
+    cardStyle = {
+      ...cardBase, position: "absolute", left: 12, right: 12, margin: "0 auto", width: `min(${CARD_WIDTH}px, calc(100vw - 24px))`,
+      ...(placement.side === "top" ? { top: "calc(12px + var(--sat, 0px))" } : { bottom: "calc(12px + var(--sab, 0px))" }),
+      maxHeight: "calc(100vh - 24px - var(--sat, 0px) - var(--sab, 0px))", overflowY: "auto",
+    };
   } else {
     cardStyle = { ...cardBase, width: "min(460px, calc(100vw - 32px))", maxHeight: "calc(100vh - 32px)", overflowY: "auto" };
   }
@@ -403,6 +437,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
       aria-describedby="fiao-tour-body"
       data-tour-card=""
       data-mode={placement.mode}
+      data-side={placement.side}
       style={cardStyle}
     >
       {arrowStyle && <span style={arrowStyle} />}

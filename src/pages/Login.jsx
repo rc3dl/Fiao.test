@@ -12,6 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { ENABLE_GOOGLE as GOOGLE_ENABLED } from "@/lib/env";
+import PasswordInput from "@/components/PasswordInput";
 
 export default function Login() {
     const { t } = useLanguage();
@@ -116,9 +117,9 @@ export default function Login() {
           </div>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
+              
               autoComplete="current-password"
               placeholder="••••••••"
               value={password}

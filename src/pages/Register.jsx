@@ -14,6 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 
 import { ENABLE_GOOGLE } from "@/lib/env";
+import PasswordInput from "@/components/PasswordInput";
 export default function Register() {
     const { t } = useLanguage();
   const [email, setEmail] = useState("");
@@ -198,9 +199,9 @@ export default function Register() {
           <Label htmlFor="password">{t("Password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
+            <PasswordInput
               id="password"
-              type="password"
+              
               autoComplete="new-password"
               placeholder="••••••••"
               value={password}
@@ -214,9 +215,9 @@ export default function Register() {
           <Label htmlFor="confirm">{t("Confirm Password")}</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-            <Input
+            <PasswordInput
               id="confirm"
-              type="password"
+              
               autoComplete="new-password"
               placeholder="••••••••"
               value={confirmPassword}

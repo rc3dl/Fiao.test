@@ -1,7 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { fetchDashboard } from "@/api/dashboardApi";
+import { buildAlerts } from "@/lib/alerts";
+import NotificationBell from "@/components/NotificationBell";
 import BottomDock from "@/native/BottomDock";
 import MoreSheet from "@/native/MoreSheet";
 import ConfirmSheet from "@/native/ConfirmSheet";
@@ -15,10 +19,10 @@ const DIALOG = '.fixed.inset-0 > [role="dialog"]';
 export default function MobileShell() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
   const [moreOpen, setMoreOpen] = useState(false);
-  const [exitHint, setExitHint] = useState(false);
+  const [toast, setToast] = useState("");
   const lastBack = useRef(0);
   const moreRef = useRef(false);
   moreRef.current = moreOpen;
@@ -61,8 +65,8 @@ export default function MobileShell() {
         // Pantalla principal: hace falta pulsar dos veces para salir.
         if (Date.now() - lastBack.current < 2000) return; // sin stop = cierra la app
         lastBack.current = Date.now();
-        setExitHint(true);
-        setTimeout(() => setExitHint(false), 2000);
+        setToast(t("Press back again to exit"));
+        setTimeout(() => setToast(""), 2000);
         return stop();
       }
       if (!["/", "/login"].includes(pathname)) { window.history.back(); return stop(); }
@@ -70,6 +74,33 @@ export default function MobileShell() {
     window.addEventListener("fiao:back", onBack);
     return () => window.removeEventListener("fiao:back", onBack);
   }, [pathname, isAuthenticated, navigate]);
+
+  // Recordatorio diario (notificación de Android) con los mismos avisos de la campana.
+  // Se reprograma al abrir la app; al cerrar sesión se cancela.
+  const { data: dash } = useQuery({ queryKey: ["dashboard"], queryFn: fetchDashboard, staleTime: 60_000, enabled: isAuthenticated });
+  useEffect(() => {
+    if (isLoadingAuth) return;
+    if (!isAuthenticated) {
+      import("@/native/notifications").then((m) => m.cancelReminder()).catch(() => {});
+      return;
+    }
+    if (!dash) return;
+    const alerts = (dash.settings?.notifications_enabled ?? true) ? buildAlerts(dash, language) : [];
+    const count = (type) => alerts.filter((a) => a.type === type).length;
+    import("@/native/notifications")
+      .then((m) => m.syncReminder({ overdue: count("overdue"), stock: count("stock"), language }))
+      .catch(() => {});
+  }, [isAuthenticated, isLoadingAuth, dash, language]);
+
+  // Errores al volver del inicio de sesión con Google (los avisa src/native/native.js)
+  useEffect(() => {
+    const onAuthError = (e) => {
+      setToast(String(e.detail || ""));
+      setTimeout(() => setToast(""), 4000);
+    };
+    window.addEventListener("fiao:auth-error", onAuthError);
+    return () => window.removeEventListener("fiao:auth-error", onAuthError);
+  }, []);
 
   // Teclado: se esconde la barra inferior y el campo activo se mantiene a la vista.
   useEffect(() => {
@@ -93,10 +124,15 @@ export default function MobileShell() {
   return (
     <>
       <SplashIntro ready={!isLoadingAuth && !isLoadingPublicSettings} />
+      {showDock && (
+        <div className="fiao-bell">
+          <NotificationBell />
+        </div>
+      )}
       {showDock && <BottomDock moreOpen={moreOpen} onMore={() => setMoreOpen((v) => !v)} />}
       {showDock && <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />}
       <ConfirmSheet />
-      {exitHint && <div role="status" className="fiao-toast">{t("Press back again to exit")}</div>}
+      {toast && <div role="status" className="fiao-toast">{toast}</div>}
     </>
   );
 }
