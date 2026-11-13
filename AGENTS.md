@@ -31,6 +31,13 @@ src/
 - Notificaciones en Android: la campana va fija arriba a la derecha y `src/native/notifications.js` programa un recordatorio local diario (9:00) con los mismos avisos. WhatsApp se abre con `src/native/openExternal.js`.
 - En Android no hay barra superior: la navegación es la barra inferior (`src/native/BottomDock.jsx`) y la campana va en el Dashboard.
 
+## Datos, sin conexión y sincronización (solo Android)
+
+- Todas las lecturas pasan por `readOrLocal(remote, local)` y todas las escrituras por `mutate(spec, legacy)` (`src/offline/index.js`). En la web llaman directo a Supabase (`legacy` / `remote`); en Android usan la copia local y la cola.
+- Una escritura nueva debe: tener un `type` conocido, un `record_id` generado en la app (`newId()`), un `group` (el registro del que depende) y su rama equivalente en `apply_sync_op` (`supabase/schema.sql`, sección 14) y en `applyLegacy` y `overlay.js`.
+- El motor (`src/offline/engine.js`) y `overlay.js` no importan nada de Supabase ni del navegador: se prueban con `npm test`. Si los cambias, añade o ajusta pruebas.
+- Las actualizaciones de la app salen de `api/version.js` y `api/release.js` (Vercel) y de `src/native/updates.js`. La versión de Android sale de `package.json`.
+
 ## Variables de entorno
 
 Se leen solo en `src/lib/env.js`. Local y Android: `.env.local` (copia `.env.example`). GitHub Pages: secrets del repositorio. `vite.config.js` detiene la compilación de GitHub Actions y de `npm run build:android` si faltan las de Supabase.

@@ -154,10 +154,22 @@ html.is-native button, html.is-native a { transition: transform 0.12s var(--ease
 html.is-native button:active:not(:disabled), html.is-native a:active { transform: scale(0.97); }
 
 /* Cada pantalla entra con un suave deslizamiento */
-html.is-native main { animation: fiao-rise 0.34s var(--ease-out) both; }
-html.is-native main h1 { animation: fiao-rise 0.4s var(--ease-out) both; }
+html.is-native main { animation: fiao-rise 0.26s var(--ease-out) both; }
 
 /* ---- Campana de avisos (va en el encabezado del Dashboard) ---- */
+/* ---- Indicador de conexión y sincronización (esquina superior izquierda) ---- */
+.fiao-pill {
+  position: fixed; top: calc(var(--sat) + 6px); left: 12px; z-index: 35; height: 34px; padding: 0 12px;
+  display: flex; align-items: center; gap: 6px; border-radius: 9999px; max-width: 58vw;
+  font-size: 12px; font-weight: 800; color: #fff; white-space: nowrap;
+  background-color: var(--dock-bg); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  animation: fiao-fade 0.2s both; transition: opacity 0.2s, transform 0.12s;
+}
+.fiao-pill span { overflow: hidden; text-overflow: ellipsis; }
+.fiao-pill-warn { background-color: #B45309; }
+.fiao-pill-update { background-color: #166534; }
+html[data-kb] .fiao-pill { opacity: 0; pointer-events: none; }
+
 .fiao-bell { position: fixed; top: calc(var(--sat) + 6px); right: 12px; z-index: 35; transition: opacity 0.2s; }
 html[data-kb] .fiao-bell { opacity: 0; pointer-events: none; }
 html.is-native [data-tour="bell"] > button {

@@ -129,6 +129,7 @@ export const TOUR_STEPS = [
     chapter: "Dashboard",
     path: "/dashboard",
     target: "dash-quick",
+    skipIfMissing: true, // en la app Android los accesos están en la barra inferior
     placement: "top",
     title: "Quick access",
     body:

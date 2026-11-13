@@ -62,7 +62,7 @@ export default function Dashboard() {
           <MobileDashboard
             name={name} isLoading={isLoading} isError={isError} error={error} refetch={refetch}
             overview={overview} debtors={debtors} entries={entries} names={names}
-            lowStock={lowStock} clients={clients} hints={hints} today={today}
+            lowStock={lowStock} clients={clients} today={today}
           />
         </main>
       </div>

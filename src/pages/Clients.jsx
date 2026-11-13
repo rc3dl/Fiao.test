@@ -10,6 +10,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { confirmAction } from "@/native/confirm";
 import { openExternal } from "@/native/openExternal";
+import SyncBadge from "@/native/SyncBadge";
 
 const FILTERS = ["All", "On Time", "Pending", "Overdue"];
 
@@ -41,7 +42,10 @@ function ClientCard({ c, onOpen }) {
           <p className="text-[15px] font-bold truncate" style={{ color: "var(--text)" }}>{c.name}</p>
           <p className="text-xs truncate" style={{ color: "var(--text-faint)" }}>{c.phone || t("No phone")}</p>
         </div>
-        <StatusBadge status={c.status} />
+        <div className="flex flex-col items-end gap-1">
+          <StatusBadge status={c.status} />
+          <SyncBadge status={c._sync} />
+        </div>
       </div>
       <div className="flex items-end justify-between mt-3 pt-3" style={{ borderTop: "1px dashed var(--border-cream)" }}>
         <div>

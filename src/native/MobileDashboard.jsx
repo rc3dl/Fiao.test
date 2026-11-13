@@ -1,22 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Wallet, Package, Users, BarChart3, Mail, TrendingUp, Banknote, AlertTriangle, ArrowRight, ShoppingCart } from "lucide-react";
+import { TrendingUp, Banknote, AlertTriangle, ArrowRight, ShoppingCart, Users } from "lucide-react";
 import { money, initials, relativeDay } from "@/lib/credit";
 import { useLanguage } from "@/contexts/LanguageContext";
-
-const QUICK = [
-  { label: "Credit", path: "/credit", icon: Wallet },
-  { label: "Products", path: "/products", icon: Package },
-  { label: "Clients", path: "/clients", icon: Users },
-  { label: "Reports", path: "/reports", icon: BarChart3 },
-  { label: "Contact", path: "/contact", icon: Mail },
-];
 
 const card = { backgroundColor: "var(--surface)" };
 const inner = { backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" };
 
 // Dashboard pensado para el teléfono (solo Android). Usa exactamente los mismos datos que la versión web.
-export default function MobileDashboard({ name, isLoading, isError, error, refetch, overview, debtors, entries, names, lowStock, clients, hints, today }) {
+export default function MobileDashboard({ name, isLoading, isError, error, refetch, overview, debtors, entries, names, lowStock, clients, today }) {
   const { t, language } = useLanguage();
   const locale = language === "es" ? "es-PA" : "en-GB";
   const waiting = isLoading || isError;
@@ -148,20 +140,6 @@ export default function MobileDashboard({ name, isLoading, isError, error, refet
           </div>
         </>
       )}
-
-      {/* Accesos rápidos */}
-      <h2 className="text-white font-bold text-lg mt-7 mb-3 px-1" style={{ fontFamily: "Poppins" }}>{t("Quick access")}</h2>
-      <div data-tour="dash-quick" className="grid grid-cols-2 gap-3">
-        {QUICK.map((q, i) => (
-          <Link key={q.path} to={q.path} className={`fiao-quick ${i === QUICK.length - 1 ? "col-span-2" : ""}`} style={card}>
-            <span className="fiao-tile-icon"><q.icon className="w-5 h-5 text-white" /></span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold" style={{ color: "var(--text)" }}>{t(q.label)}</span>
-              {hints[q.path] && <span className="block text-[11px] font-semibold truncate" style={{ color: "var(--accent-text)" }}>{hints[q.path]}</span>}
-            </span>
-          </Link>
-        ))}
-      </div>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   checkSale,
 } from "@/lib/products";
 import { useLanguage } from "@/contexts/LanguageContext";
+import SyncBadge from "@/native/SyncBadge";
 import { confirmAction } from "@/native/confirm";
 
 const fieldStyle = { backgroundColor: "var(--white)", borderColor: "var(--border-cream)", color: "var(--text)" };
@@ -280,7 +281,10 @@ export function SaleTab({ products, query, initialCart = {} }) {
                 {p.image_url ? <img src={p.image_url} alt="" className="w-full h-full object-cover" /> : <Package className="w-5 h-5" style={{ color: "var(--text-faint)" }} />}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p.name}</p>
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{p.name}</p>
+                  <SyncBadge status={p._sync} />
+                </div>
                 <p className="text-xs" style={{ color: out ? "var(--bad-text)" : "var(--text-muted)" }}>
                   {money(p.price)} · {out ? t("Out of stock") : `${formatQty(p.stock)} ${t(p.unit)} ${t("left")}`}
                 </p>

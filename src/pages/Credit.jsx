@@ -22,6 +22,7 @@ import {
 } from "@/lib/credit";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { confirmAction } from "@/native/confirm";
+import SyncBadge from "@/native/SyncBadge";
 
 function StatusBadge({ status }) {
     const { t } = useLanguage();
@@ -287,6 +288,7 @@ export default function Credit() {
                             <span className="text-sm font-bold" style={{ color: isPayment ? "var(--ok-text)" : "var(--text)" }}>
                               {isPayment ? "− " : ""}{money(row.amount)}
                             </span>
+                            <SyncBadge status={row._sync} />
                             <StatusBadge status={row.status} />
                           </div>
                         );

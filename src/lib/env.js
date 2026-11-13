@@ -18,4 +18,8 @@ export const NATIVE_REDIRECT = "com.fiao.panama://auth";
 
 // Dirección pública de la web (por ejemplo https://usuario.github.io/Fia-O), sin "/" final.
 // La app Android la usa para enlaces que se abren fuera de la app, como "olvidé mi contraseña".
+// Dirección del servicio de actualizaciones (la web desplegada en Vercel, por ejemplo https://fia-o.vercel.app).
+// Si no se define, la app consulta directamente la tabla app_releases de Supabase.
+export const UPDATES_URL = clean(import.meta.env.VITE_UPDATES_URL).replace(/\/+$/, "");
+
 export const APP_URL = clean(import.meta.env.VITE_APP_URL).replace(/\/+$/, "");

@@ -1,6 +1,7 @@
 
 import { supabase } from "@/api/supabaseClient";
 import { SUPABASE_CONFIGURED, APP_URL, NATIVE_REDIRECT } from "@/lib/env";
+import { isNetworkError, readStoredSession } from "@/lib/network";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 
@@ -11,7 +12,6 @@ const NO_NETWORK = "No se pudo conectar con el servidor. Revisa tu conexión a i
 const assertReady = () => {
   if (IS_NATIVE && !SUPABASE_CONFIGURED) throw new Error(NO_CONFIG);
 };
-const isNetworkError = (msg = "") => /failed to fetch|network|load failed|timeout/i.test(msg);
 
 const fail = (error) => {
   if (error) {
@@ -29,6 +29,12 @@ export const base44 = {
       const { data, error } = await supabase.auth.getUser();
 
       if (error || !data?.user) {
+        // App Android sin conexión: se entra con la sesión que ya está guardada en el dispositivo
+        // (sin tocarla: cuando vuelva internet se renueva sola).
+        const stored = IS_NATIVE && (!error || isNetworkError(error)) ? readStoredSession() : null;
+        const cached = stored ? localStorage.getItem(`fiao:me:${stored.user.id}`) : null;
+        if (stored && cached) return JSON.parse(cached);
+
         await supabase.auth.signOut();
         const e = new Error("Not authenticated");
         e.status = 401;
@@ -43,7 +49,7 @@ export const base44 = {
         .eq("id", u.id)
         .maybeSingle();
 
-      return {
+      const me = {
         id: u.id,
         email: u.email,
         full_name: p?.full_name || u.user_metadata?.full_name || "",
@@ -53,6 +59,8 @@ export const base44 = {
         ruc: p?.ruc || "",
         tour_seen: Boolean(u.user_metadata?.fiao_tour_v1), // el tutorial ya se mostró a esta cuenta (en cualquier dispositivo)
       };
+      if (IS_NATIVE) localStorage.setItem(`fiao:me:${u.id}`, JSON.stringify(me)); // para poder entrar sin conexión
+      return me;
     },
 
     // Guarda en la cuenta (metadatos de Supabase Auth, sin tocar tablas) que el tutorial ya se mostró.
@@ -91,7 +99,7 @@ export const base44 = {
       });
 
       if (error) {
-        if (IS_NATIVE && isNetworkError(error.message)) throw new Error(NO_NETWORK);
+        if (IS_NATIVE && isNetworkError(error)) throw new Error(NO_NETWORK);
         if (/email not confirmed/i.test(error.message)) {
           throw new Error(
             "Tu correo aún no está verificado. Regístrate de nuevo para recibir otro código."
@@ -200,6 +208,7 @@ export const base44 = {
     setToken() {},
 
     async logout(redirectUrl) {
+      if (IS_NATIVE) await import("@/offline").then((m) => m.wipeOnLogout()).catch(() => {});
       await supabase.auth.signOut();
 
       if (redirectUrl) {

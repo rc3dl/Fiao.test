@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { BarChart3, Mail, UserCircle, Globe, Moon, Sun, Compass, ChevronRight } from "lucide-react";
+import { BarChart3, Mail, UserCircle, Globe, Moon, Sun, Compass, ChevronRight, RefreshCw } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTour } from "@/tour/TourProvider";
@@ -43,6 +43,18 @@ export default function MoreSheet({ open, onClose }) {
         </div>
 
         <div className="space-y-2">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent("fiao:open-sync"));
+            }}
+            className={row}
+          >
+            <RefreshCw className="w-5 h-5" style={{ color: "var(--accent-text)" }} />
+            <span className="flex-1 text-left">{t("Sync and updates")}</span>
+            <ChevronRight className="w-4 h-4 opacity-50" />
+          </button>
           <button type="button" onClick={toggleLanguage} className={row}>
             <Globe className="w-5 h-5" style={{ color: "var(--accent-text)" }} />
             <span className="flex-1 text-left">{language === "es" ? "Español · English" : "English · Español"}</span>

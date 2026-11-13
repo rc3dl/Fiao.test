@@ -10,6 +10,10 @@ import BottomDock from "@/native/BottomDock";
 import MoreSheet from "@/native/MoreSheet";
 import ConfirmSheet from "@/native/ConfirmSheet";
 import SplashIntro from "@/native/SplashIntro";
+import UpdateGate from "@/native/UpdateGate";
+import { SyncPill, SyncSheet } from "@/native/SyncStatus";
+import { startOffline, stopOffline } from "@/offline";
+import { useSyncState } from "@/offline/useSyncState";
 
 const APP_PATHS = ["/dashboard", "/credit", "/clients", "/products", "/reports", "/contact", "/profile"];
 const DIALOG = '.fixed.inset-0 > [role="dialog"]';
@@ -20,12 +24,16 @@ export default function MobileShell() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { t, language } = useLanguage();
-  const { isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+  const { user, isAuthenticated, isLoadingAuth, isLoadingPublicSettings } = useAuth();
+  const sync = useSyncState();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
   const [toast, setToast] = useState("");
   const lastBack = useRef(0);
   const moreRef = useRef(false);
   moreRef.current = moreOpen;
+  const syncRef = useRef(false);
+  syncRef.current = syncOpen;
 
   const showDock = isAuthenticated && APP_PATHS.includes(pathname);
 
@@ -34,7 +42,23 @@ export default function MobileShell() {
     return () => document.documentElement.classList.remove("has-dock");
   }, [showDock]);
 
-  useEffect(() => setMoreOpen(false), [pathname]);
+  useEffect(() => {
+    setMoreOpen(false);
+    setSyncOpen(false);
+  }, [pathname]);
+
+  // Copia local, cola de cambios y sincronización: arrancan con la sesión y se detienen al cerrarla
+  useEffect(() => {
+    if (isAuthenticated && user?.id) startOffline(user.id);
+    else if (!isLoadingAuth) stopOffline();
+  }, [isAuthenticated, isLoadingAuth, user?.id]);
+
+  // "Sincronización y actualizaciones" se abre también desde el panel Más
+  useEffect(() => {
+    const open = () => setSyncOpen(true);
+    window.addEventListener("fiao:open-sync", open);
+    return () => window.removeEventListener("fiao:open-sync", open);
+  }, []);
 
   // Botón / gesto "volver".
   useEffect(() => {
@@ -42,7 +66,10 @@ export default function MobileShell() {
       if (e.defaultPrevented) return; // ya lo atendió, por ejemplo, la hoja de confirmación
       const stop = () => e.preventDefault();
 
+      // Actualización obligatoria: el botón volver no debe cerrar la pantalla ni la app
+      if (document.querySelector("[data-update-mandatory]")) return stop();
       if (moreRef.current) { setMoreOpen(false); return stop(); }
+      if (syncRef.current) { setSyncOpen(false); return stop(); }
 
       // Tutorial abierto: se cierra con Esc.
       if (document.querySelector("[data-tour-overlay]")) {
@@ -129,8 +156,11 @@ export default function MobileShell() {
           <NotificationBell />
         </div>
       )}
+      {showDock && <SyncPill onOpen={() => setSyncOpen(true)} />}
       {showDock && <BottomDock moreOpen={moreOpen} onMore={() => setMoreOpen((v) => !v)} />}
       {showDock && <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />}
+      {showDock && <SyncSheet open={syncOpen} onClose={() => setSyncOpen(false)} />}
+      <UpdateGate enabled={isAuthenticated} online={sync.online} />
       <ConfirmSheet />
       {toast && <div role="status" className="fiao-toast">{toast}</div>}
     </>

@@ -199,6 +199,7 @@ Sign up with a real email address, enter the 6-digit code, complete the Setup sc
 | `VITE_SUPABASE_ANON_KEY` | Yes | Public anon (or publishable) key. Safe for the browser because Row Level Security protects the data. |
 | `VITE_ENABLE_GOOGLE` | No | `true` shows the Google sign-in button (web and Android app). Default `false`. |
 | `VITE_APP_URL` | No | Public address of the web (for example `https://YOUR-USER.github.io/Fia-O`). The Android app uses it for links that open outside the app, such as password reset. |
+| `VITE_UPDATES_URL` | No | Address of the Vercel deployment that serves `/api/version` (Android app updates). If empty, the app reads the `app_releases` table in Supabase directly. |
 | `VITE_BASE` | No | Overrides the publishing path. By default it is `/` locally and in Vercel, and `/Fia-O/` in GitHub Pages. |
 
 Vite only exposes variables that start with `VITE_`. They are read when the dev server or the build starts, so restart after changing them. `.env.example` lists all of them.
@@ -232,6 +233,29 @@ After adding or updating Capacitor plugins, run `npm run android` again.
 **Notifications.** The bell stays fixed at the top-right corner of every screen. The app also schedules one local Android notification at 9:00 when there are overdue accounts or low-stock products (the same alerts as the bell, and only if alerts are on in Profile). It is rescheduled every time the app is opened and cancelled on sign-out. It cannot know about changes made while the app stays closed: that would need a server (push notifications with Firebase). Android asks for the notification permission the first time.
 
 **WhatsApp reminder.** The button opens the `wa.me` link, which Android hands to the WhatsApp app with the chat and the message ready to send (same text as the web).
+
+## Offline mode, sync and history (Android app only)
+
+The web is not affected: everything below only runs when `IS_NATIVE` is true. Code: `src/offline/` (engine, local storage, overlay), `src/native/SyncStatus.jsx` (status and review panel).
+
+- **Offline reading.** After the first sign-in the app keeps a local copy of customers, products, credits and settings (IndexedDB, separated by user). Without internet the screens read that copy. Signing in again offline uses the session already stored on the phone.
+- **Offline writing.** Every create, edit and archive goes into a local queue first and is sent when there is a connection (in order, with automatic retries, without duplicates: each operation has its own id). The queue survives closing the app and rebooting.
+- **Status.** A small pill at the top-left shows *offline*, *syncing*, *changes to review* or *update available*. Tapping it (or **More → Sync and updates**) opens the panel: connection, last sync, pending changes, history and updates. Records not yet in the cloud show a *Pending* / *Review* tag.
+- **Conflicts and rejections.** If a customer or product was changed on another device after you edited it offline, nothing is overwritten: the change waits in the panel and you choose *Keep server version* or *Use my version*. If a credit rule refuses a queued change (limit, payment higher than the debt, stock), it is kept for review with the reason. Edits made while online are applied directly (last write wins).
+- **Central history.** Run section 14 of `supabase/schema.sql` once. It adds `audit_log` (who, what, when, from which device, old and new values, sync time; it cannot be edited or deleted from the app), a version stamp (`updated_at`) on customers and products, and the function `apply_sync_op`, which applies each change, detects duplicates and conflicts, and writes the history in one step, with Row Level Security still in force. Without section 14 the app keeps working with direct writes (no central history, no conflict detection).
+- **Security.** Each user's local data is stored under their own id; signing out deletes the local copy (unsent changes are kept for that same user). The Android app sandbox protects the files from other apps; extra encryption at rest would need the Android Keystore (a future step).
+- **Tests.** `npm test` runs the automatic tests of the sync engine, the pending-changes layer, the version check and the Vercel functions.
+
+## Updating the Android app
+
+1. Run section 15 of `supabase/schema.sql` once (table `app_releases` and the public storage bucket `app-releases`).
+2. Raise `version` in `package.json` (for example `1.0.1`). The Android version number is calculated from it (`1.2.3` → `10203`) and must grow with every release. Keep using the **same signing key**, otherwise Android will refuse to update without uninstalling.
+3. Build the APK (`npm run android`, then **Build → Generate Signed Bundle / APK** in Android Studio) and upload it to Supabase → Storage → `app-releases`.
+4. Register the release, either with an `insert` in the SQL Editor or with the Vercel API:
+   `POST https://YOUR-PROJECT.vercel.app/api/release` with header `Authorization: Bearer RELEASE_ADMIN_TOKEN` and a JSON body `{ "version_name": "1.0.1", "version_code": 10001, "apk_url": "https://...", "notes_es": "...", "notes_en": "...", "mandatory": false }`.
+5. Vercel environment variables (server only, never `VITE_`): `SUPABASE_URL`, `SUPABASE_ANON_KEY` (for `/api/version`), `SUPABASE_SERVICE_ROLE_KEY` and `RELEASE_ADMIN_TOKEN` (for `/api/release`). In the app set `VITE_UPDATES_URL` to the Vercel address.
+
+The app checks for a new version when it opens and every few hours. An optional update shows the release notes with *Later*; a mandatory one blocks the app until it is installed. *Download and install* hands the APK to Android's downloader: Android asks once for permission to install apps from that source. The installation keeps all data. The app cannot show download progress (a native plugin would be needed).
 
 **Tutorial.** It opens by itself only the first time an account signs in. That is remembered in the account (Supabase Auth user metadata, no table change) and on the device, so it does not come back on another phone or after reinstalling.
 

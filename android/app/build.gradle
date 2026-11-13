@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+// La versión de la app sale de package.json ("1.2.3" -> versionCode 10203), así nunca se olvida subirla.
+// El número de versión debe crecer en cada publicación para que Android permita actualizar sin desinstalar.
+def appPackage = new groovy.json.JsonSlurper().parse(file("../../package.json"))
+def versionParts = appPackage.version.tokenize('.')
+def appVersionCode = versionParts[0].toInteger() * 10000 + versionParts[1].toInteger() * 100 + versionParts[2].replaceAll('[^0-9].*', '').toInteger()
+
 android {
     namespace = "com.fiao.panama"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,8 +13,8 @@ android {
         applicationId "com.fiao.panama"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode appVersionCode
+        versionName appPackage.version
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

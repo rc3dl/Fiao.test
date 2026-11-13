@@ -1,6 +1,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { base44 } from '@/api/authClient';
 import { supabase } from '@/api/supabaseClient';
+import { IS_NATIVE } from '@/native/useIsNative';
+import { readStoredSession } from '@/lib/network';
 
 const AuthContext = createContext();
 
@@ -21,7 +23,8 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
     try {
       const { data } = await supabase.auth.getSession();
-      if (data.session) {
+      // En Android, sin internet la sesión caducada no se puede renovar: se usa la guardada en el dispositivo
+      if (data.session || (IS_NATIVE && readStoredSession())) {
         await checkUserAuth();
       } else {
         setIsLoadingAuth(false);
