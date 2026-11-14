@@ -600,3 +600,60 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
 .auth-glow-red {
   background-color: color-mix(in srgb, var(--navbar-bg) 10%, transparent);
 }
+
+/* ---- Correcciones de ancho para Android: Clientes, Perfil y panel de sincronización ---- */
+html.is-native body,
+html.is-native #root,
+html.is-native #root > * {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: clip;
+}
+html.is-native main,
+html.is-native main > div {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+html.is-native [data-tour^="profile-"],
+html.is-native [data-tour="clients-main"] {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+html.is-native [data-tour^="profile-"] .grid,
+html.is-native [data-tour^="profile-"] input {
+  min-width: 0;
+  max-width: 100%;
+}
+html.is-native .fiao-sheet {
+  width: 100%;
+  max-width: 100vw;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+html.is-native .fiao-sheet > * {
+  min-width: 0;
+  max-width: 100%;
+}
+html.is-native .fiao-sheet .grid > button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+@media (max-width: 380px) {
+  html.is-native .fiao-sheet .grid.grid-cols-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  html.is-native [data-tour^="profile-"] {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+  html.is-native [data-tour="profile-account"] .flex.items-center.justify-between {
+    flex-wrap: wrap;
+  }
+}
