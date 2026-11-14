@@ -32,3 +32,11 @@ test("error del proveedor y tokens ausentes dan un mensaje sin exponer tokens", 
   assert.equal(missing.kind, "error");
   assert.ok(!JSON.stringify(missing).includes("SECRETO"));
 });
+
+test("enlace correcto admite el código de intercambio PKCE", () => {
+  assert.deepEqual(parseNativeAuthReturn(`${R}?code=CODE123`, R), { kind: "code", code: "CODE123" });
+});
+
+test("un retorno PKCE con error del proveedor se conserva como error", () => {
+  assert.deepEqual(parseNativeAuthReturn(`${R}?error=access_denied&error_description=Cancelado`, R), { kind: "error", message: "Cancelado" });
+});

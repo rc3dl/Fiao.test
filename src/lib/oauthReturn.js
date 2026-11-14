@@ -19,8 +19,12 @@ export function parseNativeAuthReturn(raw, redirect = "com.fiao.panama://auth") 
   const params = new URLSearchParams(url.hash.replace(/^#/, "") || url.search.replace(/^\?/, ""));
   if (params.get("error")) return { kind: "error", message: params.get("error_description") || params.get("error") };
 
+  // Supabase puede devolver tokens (implicit flow) o un código PKCE (code flow).
+  const code = params.get("code");
+  if (code) return { kind: "code", code };
+
   const access_token = params.get("access_token");
   const refresh_token = params.get("refresh_token");
-  if (!access_token || !refresh_token) return { kind: "error", message: "No se pudo completar el inicio de sesión con Google." };
+  if (!access_token || !refresh_token) return { kind: "error", message: "No se pudo completar el inicio de sesión con el proveedor." };
   return { kind: "session", access_token, refresh_token };
 }
