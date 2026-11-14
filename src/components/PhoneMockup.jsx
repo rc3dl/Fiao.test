@@ -5,7 +5,7 @@ import { withBase } from "@/lib/withBase";
 export default function PhoneMockup() {
     const { t } = useLanguage();
   const debts = [
-    { initial: "J", name: "Jonn Perez", amount: "$45.00" },
+    { initial: "J", name: "Jonn Perez", amount: "B/. 45.00" },
     { initial: "A", name: "Ana Torres", amount: "$120.00" },
     { initial: "P", name: "Pedro Buiz", amount: "$32.50" },
     { initial: "P", name: "Pedro Puiz", amount: "$32.50" },
