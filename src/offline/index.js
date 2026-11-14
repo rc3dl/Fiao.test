@@ -4,7 +4,7 @@ import { supabase } from "@/api/supabaseClient";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { queryClientInstance } from "@/lib/query-client";
-import { isNetworkError } from "@/lib/network";
+import { isNetworkError, readStoredSession } from "@/lib/network";
 import { createEngine, NetworkError } from "@/offline/engine";
 import { defaultDueDate } from "@/lib/businessDate";
 import { applyPending } from "@/offline/overlay";
@@ -212,7 +212,7 @@ async function getRow(table, id) {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export async function readOrLocal(remote, local) {
-  const c = current;
+  const c = IS_NATIVE ? await waitForOfflineStart() : null;
   if (!IS_NATIVE || !c) return remote();
   const { engine } = c;
 
@@ -238,7 +238,7 @@ export async function readOrLocal(remote, local) {
 
 // ---------- escrituras: siempre pasan por la cola ----------
 export async function mutate(spec, legacy) {
-  const c = current;
+  const c = IS_NATIVE ? await waitForOfflineStart() : null;
   if (!IS_NATIVE || !c) return legacy();
   const needsBefore = spec.type.endsWith(".update") || spec.type.endsWith(".archive");
   const before = needsBefore ? await getRow(spec.table, spec.record_id) : null;
@@ -292,51 +292,96 @@ export async function syncNow() {
 }
 
 let starting = null; // { userId, promise }
+let startGeneration = 0;
+let storageUnavailableCleanup = null;
 
-// Arranca la copia local y la sincronización del usuario. Si ya está en marcha (o arrancando), no hace nada.
+function cleanupOfflineCurrent() {
+  if (current) {
+    clearInterval(current.timer);
+    current.cleanup();
+    current = null;
+  }
+  if (storageUnavailableCleanup) {
+    storageUnavailableCleanup();
+    storageUnavailableCleanup = null;
+  }
+}
+
+async function waitForOfflineStart() {
+  if (!current && starting?.promise) {
+    const pendingStart = starting.promise;
+    try {
+      await pendingStart;
+    } catch {
+      // Si el almacenamiento no está disponible, se continúa en modo directo contra el servidor.
+    }
+  }
+  return current;
+}
+
+// Arranca la copia local y la sincronización del usuario.
 export function startOffline(userId) {
-  if (!IS_NATIVE || !userId || current?.userId === userId) return Promise.resolve();
+  if (!IS_NATIVE || !userId) return Promise.resolve();
+  if (current?.userId === userId) return Promise.resolve();
   if (starting?.userId === userId) return starting.promise;
-  const promise = doStart(userId).finally(() => {
+
+  // Invalidar cualquier inicio anterior de otra cuenta para evitar que termine después del logout.
+  const generation = ++startGeneration;
+  const promise = doStart(userId, generation).finally(() => {
     if (starting?.promise === promise) starting = null;
   });
   starting = { userId, promise };
   return promise;
 }
 
-async function doStart(userId) {
-  stopOffline();
+async function doStart(userId, generation) {
+  cleanupOfflineCurrent();
 
   let storage;
+  let mirrorAt;
+  let engine;
   try {
     storage = createIdbStorage(userId);
     await storage.list();
+    mirrorAt = await storage.getMeta("mirrorAt");
+    engine = createEngine({
+      storage,
+      remote: { apply: applyRemote },
+      uuid: newId,
+      userId,
+      deviceId: deviceId(),
+      isOnline: () => navigator.onLine !== false,
+      onApplied: async () => {
+        await pullAll();
+        queryClientInstance.invalidateQueries();
+      },
+    });
+    await engine.load();
   } catch {
-    // Sin almacenamiento duradero NO se trabaja sin conexión: una cola en memoria se perdería al cerrar la app.
-    // Las escrituras van directo al servidor (y fallan de forma visible si no hay internet) y la interfaz avisa.
-    publish({ ...EMPTY, storageUnavailable: true });
+    if (generation !== startGeneration) return;
+    // Sin almacenamiento duradero NO se trabaja sin conexión: las escrituras van al servidor.
+    const onOnline = () => publish({ ...published, online: true, storageUnavailable: true });
+    const onOffline = () => publish({ ...published, online: false, storageUnavailable: true });
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    storageUnavailableCleanup = () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+    publish({ ...EMPTY, online: navigator.onLine !== false, storageUnavailable: true });
     return;
   }
 
-  const engine = createEngine({
-    storage,
-    remote: { apply: applyRemote },
-    uuid: newId,
-    userId,
-    deviceId: deviceId(),
-    isOnline: () => navigator.onLine !== false,
-    onApplied: async () => {
-      await pullAll();
-      queryClientInstance.invalidateQueries();
-    },
-  });
-  const mirrorAt = await storage.getMeta("mirrorAt");
+  if (generation !== startGeneration) return;
+
   const onOnline = () => probe().then((ok) => ok && engine.setOnline(true));
   const onOffline = () => engine.setOnline(false);
   window.addEventListener("online", onOnline);
   window.addEventListener("offline", onOffline);
 
-  const unsubscribe = engine.subscribe(() => publish({ ...engine.getSnapshot(), ready: true, pulledAt: current?.mirrorAt ?? mirrorAt }));
+  const unsubscribe = engine.subscribe(() =>
+    publish({ ...engine.getSnapshot(), ready: true, pulledAt: current?.mirrorAt ?? mirrorAt })
+  );
   current = {
     userId,
     engine,
@@ -351,35 +396,39 @@ async function doStart(userId) {
     },
   };
 
-  await engine.load();
   publish({ ...engine.getSnapshot(), ready: Boolean(mirrorAt), pulledAt: mirrorAt });
-  queryClientInstance.invalidateQueries(); // las pantallas que cargaron antes ahora pueden usar la copia local
+  queryClientInstance.invalidateQueries();
   if (engine.isOnline()) {
     await engine.flush({ force: true });
-    pullAll();
+    if (current?.userId === userId) pullAll();
   }
 }
 
 export function stopOffline() {
-  if (!current) return;
-  clearInterval(current.timer);
-  current.cleanup();
-  current = null;
+  // También invalida una apertura de IndexedDB que todavía esté en curso.
+  startGeneration += 1;
+  starting = null;
+  cleanupOfflineCurrent();
   publish(EMPTY);
 }
 
-// Al cerrar sesión: se borra la copia de datos del dispositivo. Los cambios sin enviar se conservan
-// para ese mismo usuario (se enviarán la próxima vez que entre).
+// Al cerrar sesión se borra la copia local, pero se conservan las operaciones aún no resueltas.
 export async function wipeOnLogout() {
   const c = current;
-  if (!c) return;
-  // Se conserva toda operación sin resolver (pendientes, conflictos y rechazos); solo se borra la copia de datos.
-  const unresolved = c.engine.hasUnresolved();
+  const cachedUserId = readStoredSession()?.user?.id;
+  const userId = c?.userId || cachedUserId;
+  const keepOps = c ? c.engine.hasUnresolved() : true;
   stopOffline();
+  if (!userId) return;
+
   try {
-    await wipeMirror(c.userId, { keepOps: unresolved });
+    await wipeMirror(userId, { keepOps });
   } catch {
-    /* se ignora */
+    /* IndexedDB puede estar temporalmente bloqueado o no disponible. */
   }
-  localStorage.removeItem(`fiao:me:${c.userId}`);
+  try {
+    localStorage.removeItem(`fiao:me:${userId}`);
+  } catch {
+    /* el cierre de sesión no debe fallar por el caché local */
+  }
 }
