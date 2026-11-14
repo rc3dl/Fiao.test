@@ -429,7 +429,7 @@ create or replace function public.register_fiado_sale(
 returns uuid
 language plpgsql
 set search_path = ''
-as $$
+as $register_fiado_sale$
 declare
   v_owner uuid := auth.uid();
   v_row record;
@@ -527,7 +527,7 @@ begin
 
   return v_entry_id;
 end;
-$;
+$register_fiado_sale$;
 
 -- Match the permissions applied by migration 001 and migration 003.
 revoke all on function public.register_fiado_sale(uuid, jsonb, date, text, uuid, timestamptz) from public, anon;
