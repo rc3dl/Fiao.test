@@ -84,7 +84,8 @@ function ClientModal({ client, onClose }) {
     onClose();
   };
   const save = useMutation({
-    mutationFn: (values) => (isNew ? addClient(values) : editClient(client.id, values)),
+    mutationFn: (/** @type {{ name: string; phone: string; credit_limit: string | number }} */ values) =>
+      (isNew ? addClient(values) : editClient(client.id, values)),
     onSuccess: done,
     onError: (e) => setError(e.message),
   });
