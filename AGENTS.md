@@ -28,8 +28,8 @@ src/
 - Todo lo exclusivo de Android cuelga de `IS_NATIVE` (`src/native/useIsNative.js`) o de la clase `html.is-native` (bloque final de `src/index.css`). En el navegador `IS_NATIVE` es `false`.
 - No cambies la versión web para resolver algo propio de Android.
 - Google no permite iniciar sesión dentro de un WebView: en Android se abre el navegador del sistema y se regresa por `com.fiao.panama://auth` (`authClient.loginWithProvider` y `src/native/native.js`). Ese enlace debe estar en las Redirect URLs de Supabase.
-- Notificaciones en Android: la campana va fija arriba a la derecha y `src/native/notifications.js` programa un recordatorio local diario (9:00) con los mismos avisos. WhatsApp se abre con `src/native/openExternal.js`.
-- En Android no hay barra superior: la navegación es la barra inferior (`src/native/BottomDock.jsx`) y la campana va en el Dashboard.
+- Notificaciones en Android: la campana está en la barra superior y `src/native/notifications.js` programa un recordatorio local diario (9:00) con los mismos avisos. WhatsApp se abre con `src/native/openExternal.js`.
+- En Android la barra superior (`src/native/MobileTopBar.jsx`: logo, indicador de sincronización, avisos y perfil) va pegada arriba, y la navegación es la barra inferior (`src/native/BottomDock.jsx`). La barra de navegación del sistema se oculta y reaparece al deslizar (`src/native/native.js`).
 
 ## Datos, sin conexión y sincronización (solo Android)
 

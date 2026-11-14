@@ -141,9 +141,9 @@ html.is-native h1, html.is-native h2, html.is-native h3, html.is-native p, html.
 html.is-native input, html.is-native textarea, html.is-native select { -webkit-user-select: text; user-select: text; font-size: 15px; }
 
 /* Espacio para que la barra inferior no tape contenido */
-/* Arriba queda libre una franja para la campana de avisos (fija en la esquina) */
+/* Arriba va la barra superior fija (logo, avisos y perfil): el contenido empieza justo debajo */
 html.is-native main { padding-top: var(--sat); }
-html.is-native.has-dock main { padding-top: calc(var(--sat) + 46px); }
+html.is-native.has-dock main { padding-top: calc(var(--sat) + 62px); }
 html.is-native.has-dock main { padding-bottom: calc(var(--dock-h) + var(--sab) + 30px); }
 html.is-native main h1 { font-size: 1.6rem; line-height: 1.12; letter-spacing: -0.02em; }
 html.is-native main > div { padding-top: 0.25rem; padding-bottom: 0.75rem; }
@@ -157,29 +157,33 @@ html.is-native button:active:not(:disabled), html.is-native a:active { transform
 html.is-native main { animation: fiao-rise 0.26s var(--ease-out) both; }
 
 /* ---- Campana de avisos (va en el encabezado del Dashboard) ---- */
-/* ---- Indicador de conexión y sincronización (esquina superior izquierda) ---- */
+/* ---- Barra superior (Android) ---- */
+.fiao-topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 34;
+  display: flex; align-items: center; gap: 8px;
+  padding: calc(var(--sat) + 6px) 12px 8px;
+  background-color: var(--navbar-bg); border-radius: 0 0 22px 22px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.fiao-topbar-mid { flex: 1; min-width: 0; display: flex; }
+.fiao-icon-btn { width: 40px; height: 40px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; background-color: rgba(255, 255, 255, 0.16); flex-shrink: 0; }
+/* Indicador de conexión y sincronización: solo aparece si hay algo que saber */
 .fiao-pill {
-  position: fixed; top: calc(var(--sat) + 6px); left: 12px; z-index: 35; height: 34px; padding: 0 12px;
-  display: flex; align-items: center; gap: 6px; border-radius: 9999px; max-width: 58vw;
+  height: 32px; padding: 0 11px; display: flex; align-items: center; gap: 6px; border-radius: 9999px; max-width: 100%;
   font-size: 12px; font-weight: 800; color: #fff; white-space: nowrap;
-  background-color: var(--dock-bg); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  animation: fiao-fade 0.2s both; transition: opacity 0.2s, transform 0.12s;
+  background-color: var(--dock-bg); animation: fiao-fade 0.2s both; transition: transform 0.12s;
 }
 .fiao-pill span { overflow: hidden; text-overflow: ellipsis; }
 .fiao-pill-warn { background-color: #B45309; }
 .fiao-pill-update { background-color: #166534; }
-html[data-kb] .fiao-pill { opacity: 0; pointer-events: none; }
 
-.fiao-bell { position: fixed; top: calc(var(--sat) + 6px); right: 12px; z-index: 35; transition: opacity 0.2s; }
-html[data-kb] .fiao-bell { opacity: 0; pointer-events: none; }
 html.is-native [data-tour="bell"] > button {
-  width: 42px; height: 42px; border-radius: 9999px; background-color: var(--dock-bg);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  width: 40px; height: 40px; border-radius: 9999px; background-color: rgba(255, 255, 255, 0.16);
 }
 html.is-native [data-tour="bell"] > button svg { width: 22px; height: 22px; }
 /* Panel de avisos: a lo ancho, bajo la barra */
 html.is-native [data-tour="bell"] [role="dialog"] {
-  position: fixed; left: 12px; right: 12px; top: calc(var(--sat) + 64px);
+  position: fixed; left: 12px; right: 12px; top: calc(var(--sat) + 62px);
   width: auto; max-height: 60vh; overflow-y: auto; margin: 0; z-index: 60;
   border-radius: 24px;
 }

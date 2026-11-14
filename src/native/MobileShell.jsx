@@ -5,13 +5,13 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { fetchDashboard } from "@/api/dashboardApi";
 import { buildAlerts } from "@/lib/alerts";
-import NotificationBell from "@/components/NotificationBell";
+import MobileTopBar from "@/native/MobileTopBar";
 import BottomDock from "@/native/BottomDock";
 import MoreSheet from "@/native/MoreSheet";
 import ConfirmSheet from "@/native/ConfirmSheet";
 import SplashIntro from "@/native/SplashIntro";
 import UpdateGate from "@/native/UpdateGate";
-import { SyncPill, SyncSheet } from "@/native/SyncStatus";
+import { SyncSheet } from "@/native/SyncStatus";
 import { startOffline, stopOffline } from "@/offline";
 import { useSyncState } from "@/offline/useSyncState";
 
@@ -151,12 +151,7 @@ export default function MobileShell() {
   return (
     <>
       <SplashIntro ready={!isLoadingAuth && !isLoadingPublicSettings} />
-      {showDock && (
-        <div className="fiao-bell">
-          <NotificationBell />
-        </div>
-      )}
-      {showDock && <SyncPill onOpen={() => setSyncOpen(true)} />}
+      {showDock && <MobileTopBar onOpenSync={() => setSyncOpen(true)} />}
       {showDock && <BottomDock moreOpen={moreOpen} onMore={() => setMoreOpen((v) => !v)} />}
       {showDock && <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />}
       {showDock && <SyncSheet open={syncOpen} onClose={() => setSyncOpen(false)} />}

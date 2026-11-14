@@ -13,6 +13,10 @@
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- Barras del sistema y fondo de la ventana en el rojo de FIA'O: sin franjas blancas arriba ni abajo -->
+        <item name="android:statusBarColor">@color/fiao_bar</item>
+        <item name="android:navigationBarColor">@color/fiao_bar</item>
+        <item name="android:windowBackground">@color/fiao_bar</item>
     </style>
 
 

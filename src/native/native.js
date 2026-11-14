@@ -1,5 +1,5 @@
 // Integración nativa de Android (Capacitor 8). Solo se carga dentro de la app.
-import { SystemBars, SystemBarsStyle } from "@capacitor/core";
+import { SystemBars, SystemBarsStyle, SystemBarType } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import { supabase } from "@/api/supabaseClient";
 import { NATIVE_REDIRECT } from "@/lib/env";
@@ -25,6 +25,14 @@ export async function initNative() {
   // La barra de estado y la de gestos van sobre el rojo de FIA'O: iconos del sistema en claro.
   try {
     await SystemBars.setStyle({ style: SystemBarsStyle.Dark });
+  } catch {
+    /* se ignora */
+  }
+
+  // Los botones o la línea de navegación de Android se ocultan y reaparecen al deslizar desde el borde de abajo.
+  // Para dejarlos siempre visibles, borra este bloque.
+  try {
+    await SystemBars.hide({ bar: SystemBarType.NavigationBar });
   } catch {
     /* se ignora */
   }
