@@ -60,9 +60,9 @@ export default function LegalPageLayout({ title, updated, intro, notice, section
 
               <div className="border-t pt-6" style={{ borderColor: "var(--border-cream)" }}>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                  {es ? "¿Tienes una consulta sobre este documento?" : "Have a question about this document?"}{" "}
-                  <Link to="/contact" className="font-semibold underline underline-offset-4" style={{ color: "var(--accent-text)" }}>
-                    {es ? "Contacta con FIA'O." : "Contact FIA'O."}
+                  {es ? "Para consultas de soporte, inicia sesión en tu cuenta y utiliza la sección Contacto." : "For support questions, sign in to your account and use the Contact section."}{" "}
+                  <Link to="/login" className="font-semibold underline underline-offset-4" style={{ color: "var(--accent-text)" }}>
+                    {es ? "Iniciar sesión." : "Sign in."}
                   </Link>
                 </p>
               </div>
