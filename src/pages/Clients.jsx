@@ -215,6 +215,7 @@ export default function Clients() {
   const [query, setQuery] = useState("");
   const [modal, setModal] = useState(null); // null | { client } (client = null para "nuevo")
   const [reminderId, setReminderId] = useState(null);
+  const [openedReminderKey, setOpenedReminderKey] = useState("");
 
   const { data: clients = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ["clients"],
@@ -245,15 +246,24 @@ export default function Clients() {
   const target = debtors.find((c) => c.id === reminderId) || debtors[0];
   const message = target ? reminderText({ name: target.name, balance: target.balance, store: user?.store_name, language }) : "";
   const link = target ? waLink(target.phone, message) : "";
+  const reminderKey = target ? JSON.stringify([target.id, message]) : "";
 
   const reminder = useMutation({
     mutationFn: logReminder,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["reminders"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["reminders"] });
+      setOpenedReminderKey("");
+    },
   });
 
   const sendReminder = () => {
     if (!target || !link) return;
-    openExternal(link); // se abre primero para que el navegador no lo bloquee
+    openExternal(link); // abrir WhatsApp no demuestra que el usuario haya enviado el mensaje
+    setOpenedReminderKey(reminderKey);
+  };
+
+  const confirmReminderSent = () => {
+    if (!target || openedReminderKey !== reminderKey || reminder.isPending) return;
     reminder.mutate({ client_id: target.id, message });
   };
 
@@ -403,6 +413,14 @@ export default function Clients() {
                     <p className="text-xs font-semibold" style={{ color: "var(--warn-text)" }}>
                       {t("Add a phone number to")} {target.name} {t("to send reminders.")}
                     </p>
+                  )}
+                  {openedReminderKey === reminderKey && (
+                    <div className="mt-3">
+                      <p className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>{t("After sending it in WhatsApp, return here and confirm.")}</p>
+                      <button type="button" onClick={confirmReminderSent} disabled={reminder.isPending} className="px-4 py-2 rounded-full text-sm font-bold disabled:opacity-60" style={{ backgroundColor: "var(--ok-bg)", color: "var(--ok-text)" }}>
+                        {reminder.isPending ? t("Saving...") : t("I sent the message")}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
