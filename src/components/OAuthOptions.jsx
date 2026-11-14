@@ -67,7 +67,7 @@ export default function OAuthOptions({ onSelect, loadingProvider = null }) {
               disabled={disabled}
               aria-label={actionLabel + " " + provider.name}
               aria-busy={busy}
-              className="oauth-provider-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-sm font-semibold text-[#2D2926] opacity-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+              className="oauth-provider-button inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold opacity-100 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ProviderMark provider={provider} />}
               <span>{provider.name}</span>
