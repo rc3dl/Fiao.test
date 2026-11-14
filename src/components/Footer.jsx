@@ -57,7 +57,7 @@ export default function Footer() {
           <div>
             <h2 className="text-xs font-bold uppercase tracking-[0.16em] text-white/45">{es ? "Información" : "Information"}</h2>
             <ul className="mt-4 space-y-3">
-              <li><Link to="/contact" className="text-sm text-white/75 transition hover:text-white">{es ? "Contacto y soporte" : "Contact and support"}</Link></li>
+              <li><Link to="/login" className="text-sm text-white/75 transition hover:text-white">{es ? "Soporte para usuarios (iniciar sesión)" : "User support (sign in)"}</Link></li>
               <li><Link to="/privacy" className="text-sm text-white/75 transition hover:text-white">{es ? "Política de privacidad" : "Privacy policy"}</Link></li>
               <li><Link to="/terms" className="text-sm text-white/75 transition hover:text-white">{es ? "Términos y condiciones" : "Terms and conditions"}</Link></li>
             </ul>
