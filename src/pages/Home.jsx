@@ -3,7 +3,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import PhoneMockup from "@/components/PhoneMockup";
 import { Link } from "react-router-dom";
-import { ShieldCheck, BookOpen, Bell, BarChart3, Smartphone, Wallet } from "lucide-react";
+import { ShieldCheck, BookOpen, Bell, BarChart3, Smartphone, Wallet, Users as UsersIcon } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Home() {
@@ -13,36 +13,68 @@ export default function Home() {
       <Navbar />
 
       {/* Hero */}
-      <section className="flex-1">
-        <div className="mx-auto max-w-6xl px-6 py-10 lg:py-16 grid lg:grid-cols-2 gap-10 items-center">
-          {/* Left */}
-          <div className="text-center lg:text-left">
-           <h1 className="text-white font-bold leading-[1.1] text-4xl sm:text-5xl lg:text-6xl" style={{ fontFamily: "Poppins" }}>
-  {language === "en" ? (
-    <>Your <span style={{ color: "#F9D103" }}>Credit</span> notebook, now digital.</>
-  ) : (
-    <>Tu libreta de <span style={{ color: "#F9D103" }}>fiados</span>, ahora digital.</>
-  )}
-</h1>
-            <p className="text-white/90 mt-5 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+      <section className="relative isolate flex-1 overflow-hidden">
+        <div aria-hidden="true" className="pointer-events-none absolute -top-36 -left-28 h-96 w-96 rounded-full bg-yellow-300/10 blur-3xl" />
+        <div aria-hidden="true" className="pointer-events-none absolute -bottom-40 right-0 h-[28rem] w-[28rem] rounded-full bg-white/10 blur-3xl" />
+
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[1.05fr_0.95fr] lg:gap-8 lg:py-20">
+          {/* Message */}
+          <div className="motion-safe:animate-[fiao-rise_650ms_ease-out_both] text-center lg:text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-white shadow-sm backdrop-blur">
+              <ShieldCheck className="h-4 w-4 text-[#F9D103]" />
+              {language === "en" ? "MADE FOR SMALL BUSINESSES" : "HECHO PARA PEQUEÑOS COMERCIOS"}
+            </div>
+
+            <h1 className="mx-auto max-w-2xl text-balance text-4xl font-bold leading-[1.08] tracking-tight text-white sm:text-5xl lg:mx-0 lg:text-6xl" style={{ fontFamily: "Poppins" }}>
+              {language === "en" ? (
+                <>Your <span className="text-[#F9D103]">credit notebook</span>, finally in one place.</>
+              ) : (
+                <>Tu libreta de <span className="text-[#F9D103]">fiados</span>, por fin en un solo lugar.</>
+              )}
+            </h1>
+
+            <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg lg:mx-0">
               {t("FIA'O digitizes customer, debt, and payment management for convenience stores and small businesses in Panama, replacing the traditional paper ledger with a modern digital management system.")}
             </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Link to="/login" className="px-7 py-3 rounded-full font-bold text-sm text-center transition-transform hover:scale-105" style={{ backgroundColor: "#F9D103", color: "var(--on-yellow)" }}>
-                {t("Login")}
+
+            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
+              <Link
+                to="/register"
+                className="group inline-flex items-center justify-center gap-2 rounded-full px-7 py-3.5 text-sm font-bold shadow-lg shadow-black/10 transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#B91C1C]"
+                style={{ backgroundColor: "#F9D103", color: "var(--on-yellow)" }}
+              >
+                {language === "en" ? "Create your free account" : "Crea tu cuenta gratis"}
+                <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-1">→</span>
               </Link>
-              <Link to="/register" className="px-7 py-3 rounded-full font-bold text-sm text-center transition-transform hover:scale-105" style={{ backgroundColor: "#F9D103", color: "var(--on-yellow)" }}>
-                {t("Sign up")}
+              <Link
+                to="/login"
+                className="inline-flex items-center justify-center rounded-full border border-white/35 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                {language === "en" ? "I already have an account" : "Ya tengo una cuenta"}
               </Link>
             </div>
-            <p className="text-white/80 mt-6 text-sm font-medium">
-              {t("Manage your fiado, manage your business.")}
-            </p>
+
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 text-xs font-medium text-white/80 lg:justify-start">
+              <span className="inline-flex items-center gap-2"><BookOpen className="h-4 w-4 text-[#F9D103]" />{language === "en" ? "Customer records" : "Registro de clientes"}</span>
+              <span className="inline-flex items-center gap-2"><Wallet className="h-4 w-4 text-[#F9D103]" />{language === "en" ? "Credit and payments" : "Fiados y pagos"}</span>
+              <span className="inline-flex items-center gap-2"><BarChart3 className="h-4 w-4 text-[#F9D103]" />{language === "en" ? "Clear reports" : "Informes claros"}</span>
+            </div>
           </div>
 
-          {/* Right - phone mockup */}
-          <div className="flex justify-center lg:justify-end">
-            <PhoneMockup />
+          {/* Product preview */}
+          <div className="relative flex justify-center py-4 lg:justify-end motion-safe:animate-[fiao-rise_800ms_ease-out_120ms_both]">
+            <div aria-hidden="true" className="absolute left-1/2 top-1/2 h-[22rem] w-[22rem] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/10 bg-gradient-to-br from-white/10 to-transparent shadow-[0_0_90px_rgba(249,209,3,0.14)] sm:h-[26rem] sm:w-[26rem]" />
+            <div className="relative z-10">
+              <PhoneMockup />
+            </div>
+            <div className="absolute left-0 top-14 z-20 hidden items-center gap-2 rounded-2xl border border-white/60 bg-white px-4 py-3 text-sm font-semibold text-[#2D2926] shadow-xl sm:flex lg:-left-5 motion-safe:animate-[fiao-rise_700ms_ease-out_350ms_both]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FFF4B8] text-[#9A6B00]"><UsersIcon /></span>
+              {language === "en" ? "Your customers, organized" : "Tus clientes, organizados"}
+            </div>
+            <div className="absolute bottom-16 right-0 z-20 hidden items-center gap-2 rounded-2xl border border-white/60 bg-white px-4 py-3 text-sm font-semibold text-[#2D2926] shadow-xl sm:flex lg:-right-4 motion-safe:animate-[fiao-rise_700ms_ease-out_500ms_both]">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FCE4E4] text-[#B91C1C]"><Bell className="h-4 w-4" /></span>
+              {language === "en" ? "Payments under control" : "Pagos bajo control"}
+            </div>
           </div>
         </div>
       </section>
