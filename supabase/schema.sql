@@ -378,6 +378,15 @@ declare
   v_balance numeric(12,2);
 begin
   if new.archived and not old.archived then
+    -- Explicitly hold the client row before the shared balance lock.
+    perform 1
+      from public.clients c
+     where c.id = new.id and c.owner_id = new.owner_id
+       for update;
+    if not found then
+      raise exception 'Customer not found.';
+    end if;
+
     perform pg_advisory_xact_lock(hashtext(new.id::text));
 
     select coalesce(sum(case when e.kind = 'fiado' then e.amount else -e.amount end), 0)
