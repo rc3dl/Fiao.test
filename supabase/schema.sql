@@ -366,9 +366,9 @@ create trigger credit_entry_rules
   before insert on public.credit_entries
   for each row execute function public.check_credit_entry();
 
-// Prevent archiving a customer who still owes money. It uses the same per-customer
-// advisory lock as credit_entry_rules, so a concurrent fiado cannot slip between
-// the balance check and the archive update.
+-- Prevent archiving a customer who still owes money. It uses the same per-customer
+-- advisory lock as credit_entry_rules, so a concurrent fiado cannot slip between
+-- the balance check and the archive update.
 create or replace function public.prevent_client_archive_with_balance()
 returns trigger
 language plpgsql
@@ -429,7 +429,7 @@ create or replace function public.register_fiado_sale(
 returns uuid
 language plpgsql
 set search_path = ''
-as $$
+as $register_fiado_sale$
 declare
   v_owner uuid := auth.uid();
   v_row record;
@@ -527,7 +527,11 @@ begin
 
   return v_entry_id;
 end;
-$$;
+$register_fiado_sale$;
+
+-- Match the permissions applied by migration 001 and migration 003.
+revoke all on function public.register_fiado_sale(uuid, jsonb, date, text, uuid, timestamptz) from public, anon;
+grant execute on function public.register_fiado_sale(uuid, jsonb, date, text, uuid, timestamptz) to authenticated;
 
 
 -- -----------------------------------------------------------------------------

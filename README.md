@@ -83,7 +83,7 @@ There is no custom server: the browser talks directly to Supabase, and Row Level
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org) 20.19 or newer (the current LTS is recommended)
+- [Node.js](https://nodejs.org) 22 or newer (the current LTS is recommended)
 - [Git](https://git-scm.com)
 - A free [Supabase](https://supabase.com) account
 

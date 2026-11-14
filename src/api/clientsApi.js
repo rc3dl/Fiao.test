@@ -2,6 +2,7 @@
 // Las pantallas no hablan con Supabase directamente: llaman a estas funciones.
 import { supabase } from "@/api/supabaseClient";
 import { computeClientStats, parseLimit } from "@/lib/credit";
+import { fetchAllPages } from "@/lib/supabasePagination";
 import { mutate, newId, readOrLocal } from "@/offline";
 
 function check(error) {
@@ -22,17 +23,17 @@ function buildClients(clientRows, entryRows) {
 }
 
 async function fetchClientsRemote() {
-  const [clientsRes, entriesRes] = await Promise.all([
-    supabase
-      .from("clients")
-      .select("id, name, phone, credit_limit, created_at")
-      .eq("archived", false)
-      .order("name"),
-    supabase.from("credit_entries").select("id, client_id, kind, amount, due_date, created_at"),
+  const [clientRows, entryRows] = await Promise.all([
+    fetchAllPages((from, to) =>
+      supabase.from("clients").select("id, name, phone, credit_limit, created_at")
+        .eq("archived", false).order("name").order("id").range(from, to)
+    ),
+    fetchAllPages((from, to) =>
+      supabase.from("credit_entries").select("id, client_id, kind, amount, due_date, created_at")
+        .order("created_at", { ascending: true }).order("id").range(from, to)
+    ),
   ]);
-  check(clientsRes.error);
-  check(entriesRes.error);
-  return buildClients(clientsRes.data, entriesRes.data);
+  return buildClients(clientRows, entryRows);
 }
 
 // Lista de clientes (sin archivados) con su saldo, estado y compras ya calculados.
