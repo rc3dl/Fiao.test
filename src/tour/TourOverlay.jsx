@@ -33,7 +33,7 @@ function isVisible(el) {
 // Busca el primer elemento VISIBLE con data-tour="id" (algunos existen dos veces: versión de escritorio y de celular).
 function findTourElement(id) {
   if (!id) return null;
-  for (const el of document.querySelectorAll(`[data-tour="${id}"]`)) if (isVisible(el)) return el;
+  for (const el of document.querySelectorAll(`[data-tour="${id}"]`)) if (isVisible(el)) return /** @type {HTMLElement} */ (el);
   return null;
 }
 
@@ -121,16 +121,16 @@ export default function TourOverlay({ step, index, total, pathname, language = "
   const ui = getTourUi(language);
   const displayStep = localizeTourStep(step, language);
   const [vp, setVp] = useState({ w: window.innerWidth, h: window.innerHeight });
-  const [found, setFound] = useState({ stepId: step.id, status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false });
+  const [found, setFound] = useState({ stepId: step.id, status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false, pinned: false });
   const [cardHeight, setCardHeight] = useState(260); // alto de la tarjeta (se mide); el ancho es fijo
   const cardRef = useRef(null);
   const primaryRef = useRef(null);
   const previousFocus = useRef(null);
-  const handlers = useRef({});
+  const handlers = useRef({ onNext, onBack, onClose, onSkip });
   handlers.current = { onNext, onBack, onClose, onSkip };
 
   // Al cambiar de paso, durante un instante el estado guardado todavía es del paso anterior: se ignora
-  const view = found.stepId === step.id ? found : { status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false };
+  const view = found.stepId === step.id ? found : { status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false, pinned: false };
 
   const mobile = isMobileWidth(vp.w);
   const docked = vp.w < DOCK_MAX_WIDTH;
@@ -154,7 +154,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
 
   // Buscar el elemento del paso, llevarlo a la vista y seguirlo si la página cambia de tamaño
   useEffect(() => {
-    setFound({ stepId: step.id, status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false });
+    setFound({ stepId: step.id, status: step.target ? "searching" : "center", rect: null, radius: 16, fallback: false, pinned: false });
     if (!step.target) return undefined;
 
     let cancelled = false;
@@ -191,7 +191,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
       usingFallback = false;
       patient = true;
       startedAt = performance.now();
-      setFound({ stepId: step.id, status: "searching", rect: null, radius: 16, fallback: false });
+      setFound({ stepId: step.id, status: "searching", rect: null, radius: 16, fallback: false, pinned: false });
       tick();
     };
 
@@ -274,7 +274,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
           return;
         }
         // Se explica con una tarjeta centrada, pero se sigue vigilando por si el elemento aparece más tarde
-        setFound((prev) => (prev.status === "missing" && prev.stepId === step.id ? prev : { stepId: step.id, status: "missing", rect: null, radius: 16, fallback: false }));
+        setFound((prev) => (prev.status === "missing" && prev.stepId === step.id ? prev : { stepId: step.id, status: "missing", rect: null, radius: 16, fallback: false, pinned: false }));
         timer = setTimeout(tick, 500);
         return;
       }
@@ -383,6 +383,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
   const searching = view.status === "searching";
 
   // -------------------------------------------------------------- estilos
+  /** @type {React.CSSProperties} */
   const cardBase = {
     background: "var(--white, #fff)",
     color: "var(--text, #2D2926)",
@@ -393,6 +394,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
     fontFamily: "inherit",
     boxSizing: "border-box",
   };
+  /** @type {React.CSSProperties} */
   let cardStyle;
   if (placement.mode === "float") {
     cardStyle = { ...cardBase, position: "absolute", top: placement.top, left: placement.left, width: placement.width };
@@ -407,7 +409,8 @@ export default function TourOverlay({ step, index, total, pathname, language = "
   }
 
   const arrow = placement.mode === "float" ? placement.arrow : null;
-  const arrowStyle = arrow && {
+  /** @type {React.CSSProperties | null} */
+  const arrowStyle = arrow ? {
     position: "absolute",
     width: 14,
     height: 14,
@@ -420,7 +423,7 @@ export default function TourOverlay({ step, index, total, pathname, language = "
     ...(arrow.edge === "bottom" && { bottom: -8, left: arrow.offset - 7, borderWidth: "0 1px 1px 0" }),
     ...(arrow.edge === "left" && { left: -8, top: arrow.offset - 7, borderWidth: "0 0 1px 1px" }),
     ...(arrow.edge === "right" && { right: -8, top: arrow.offset - 7, borderWidth: "1px 1px 0 0" }),
-  };
+  } : null;
 
   const btn = { border: "none", borderRadius: 999, padding: "10px 18px", fontSize: 14, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 6 };
   const ease = "cubic-bezier(.4,0,.2,1)";
