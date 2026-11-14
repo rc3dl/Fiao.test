@@ -58,7 +58,7 @@ export function createEngine({
   deviceId,
   isOnline = () => true,
   now = () => Date.now(),
-  onApplied = async () => {},
+  onApplied = async (_applied) => {},
   maxHistory = 200,
 }) {
   let ops = null;

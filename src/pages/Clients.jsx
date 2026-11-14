@@ -239,7 +239,7 @@ export default function Clients() {
     () =>
       clients
         .filter((c) => c.balance > 0)
-        .sort((a, b) => (b.overdue > 0) - (a.overdue > 0) || b.balance - a.balance),
+        .sort((a, b) => Number(b.overdue > 0) - Number(a.overdue > 0) || b.balance - a.balance),
     [clients]
   );
   const target = debtors.find((c) => c.id === reminderId) || debtors[0];

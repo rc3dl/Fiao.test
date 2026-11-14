@@ -46,6 +46,7 @@ export function SyncPill({ onOpen }) {
   );
 }
 
+/** @param {{ title: string, subtitle?: string, children?: import("react").ReactNode }} props */
 function Row({ title, subtitle, children }) {
   return (
     <div className="p-3 rounded-2xl" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border-cream)" }}>

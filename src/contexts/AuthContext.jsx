@@ -4,7 +4,8 @@ import { supabase } from '@/api/supabaseClient';
 import { IS_NATIVE } from '@/native/useIsNative';
 import { readStoredSession } from '@/lib/network';
 
-const AuthContext = createContext();
+/** @type {import("react").Context<any>} */
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);

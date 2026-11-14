@@ -232,7 +232,7 @@ export function percentUsed(balance, limit) {
 export function rankDebtors(clients) {
   return clients
     .filter((c) => c.balance > 0)
-    .sort((a, b) => (b.overdue > 0) - (a.overdue > 0) || b.balance - a.balance);
+    .sort((a, b) => Number(b.overdue > 0) - Number(a.overdue > 0) || b.balance - a.balance);
 }
 
 // ¿Al producto le queda poco (o nada)? Stock igual o menor que su mínimo.
