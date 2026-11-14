@@ -123,7 +123,7 @@ async function applyLegacy(op) {
     case "reminder.log":
       return done(supabase.from("reminders").insert({ id: op.record_id, client_id: p.client_id, message: p.message, channel: "whatsapp" }));
     case "profile.update":
-      return done(supabase.from("profiles").upsert({ id: op.user_id, ...p }));
+      return done(supabase.from("profiles").upsert({ id: op.record_id, ...p }));
     default:
       return { status: "rejected", message: `Unknown operation: ${op.type}` };
   }
