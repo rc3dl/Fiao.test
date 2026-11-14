@@ -51,6 +51,8 @@ test("SQL serializes duplicate sync operations and requires an idempotency key f
   assert.doesNotMatch(migration003, /^as \$(?!\$)|^\$;$/m);
   assert.match(migration001, /An idempotency key is required/);
   assert.match(migration003, /perform pg_advisory_xact_lock\(hashtext\(v_owner::text\), hashtext\(v_id::text\)\)/);
+  assert.match(schema, /select c\.archived into v_archived[\s\S]*?for update/i);
+  assert.match(migration003, /select c\.archived into v_archived[\s\S]*?for update/i);
 });
 
 test("client archive and credit creation share a database lock and reject outstanding debt", async () => {
@@ -84,4 +86,8 @@ test("auth changes clear account-scoped query cache and profile writes use the o
   assert.match(auth, /queryClientInstance\.clear\(\)/);
   assert.match(authClient, /type: "profile\.update"/);
   assert.match(setupApi, /type: "profile\.update"/);
+  const offline = await readFile(new URL("../src/offline/index.js", import.meta.url), "utf8");
+  assert.match(offline, /lifecycleGeneration/);
+  assert.match(offline, /if \(isStale\(\)\) return/);
+  assert.match(authClient, /wipeOnLogout\(userId\)/);
 });
