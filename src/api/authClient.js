@@ -15,8 +15,7 @@ const assertReady = () => {
 
 const fail = (error) => {
   if (error) {
-    const e = new Error(error.message);
-    e.status = error.status;
+    const e = Object.assign(new Error(error.message), { status: error.status });
     throw e;
   }
 };
@@ -36,8 +35,7 @@ export const base44 = {
         if (stored && cached) return JSON.parse(cached);
 
         await supabase.auth.signOut();
-        const e = new Error("Not authenticated");
-        e.status = 401;
+        const e = Object.assign(new Error("Not authenticated"), { status: 401 });
         throw e;
       }
 
@@ -52,9 +50,10 @@ export const base44 = {
         // Sin conexión en Android: se usa el perfil guardado. Cualquier otro fallo NO se convierte en un perfil vacío.
         const cached = IS_NATIVE && isNetworkError(profileError) ? localStorage.getItem(`fiao:me:${u.id}`) : null;
         if (cached) return JSON.parse(cached);
-        const e = new Error(profileError.message || "Could not load the profile");
-        e.status = 503;
-        e.type = "profile_error";
+        const e = Object.assign(new Error(profileError.message || "Could not load the profile"), {
+          status: 503,
+          type: "profile_error",
+        });
         throw e;
       }
 
@@ -82,8 +81,7 @@ export const base44 = {
       const { data } = await supabase.auth.getUser();
 
       if (!data?.user) {
-        const e = new Error("Not authenticated");
-        e.status = 401;
+        const e = Object.assign(new Error("Not authenticated"), { status: 401 });
         throw e;
       }
 
@@ -214,7 +212,8 @@ export const base44 = {
       fail(error);
     },
 
-    setToken() {},
+    // verifyOtp() ya guarda la sesión de Supabase; se conserva este método por compatibilidad.
+    setToken(_accessToken) {},
 
     async logout(redirectUrl) {
       if (IS_NATIVE) await import("@/offline").then((m) => m.wipeOnLogout()).catch(() => {});
