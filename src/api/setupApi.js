@@ -2,6 +2,8 @@
 import { supabase } from "@/api/supabaseClient";
 import { mutate } from "@/offline";
 import { mergeProfileCache } from "@/lib/profileCache";
+import { IS_NATIVE } from "@/native/useIsNative";
+import { readStoredSession } from "@/lib/network";
 
 const SETUP_FIELDS = [
   "full_name",
@@ -16,7 +18,7 @@ const SETUP_FIELDS = [
 
 export async function completeSetup(values) {
   const { data } = await supabase.auth.getSession();
-  const user = data?.session?.user;
+  const user = data?.session?.user || (IS_NATIVE ? readStoredSession()?.user : null);
   if (!user) throw new Error("Not authenticated");
 
   const payload = Object.fromEntries(
