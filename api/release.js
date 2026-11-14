@@ -27,12 +27,6 @@ function validateRelease(b, supabaseUrl) {
   if (!Number.isSafeInteger(code) || code <= 0 || code > 2100000000) {
     problems.push("version_code must be a positive integer");
   }
-  let url = null;
-  try {
-    url = typeof b.apk_url === "string" && b.apk_url.length <= 2048 ? new URL(b.apk_url) : null;
-  } catch {
-    url = null;
-  }
   if (!isTrustedReleaseUrl(b.apk_url, supabaseUrl)) {
     problems.push("apk_url must be an HTTPS APK in this project's app-releases bucket");
   }
