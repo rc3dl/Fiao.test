@@ -129,7 +129,7 @@ export default function Credit() {
     const problem = checkFiado({ amount, balance: client.balance, limit, autoBlock: settings.auto_block });
     if (problem) return setFiadoNote({ type: "error", text: problem });
     if (fiadoDue && fiadoDue < today) return setFiadoNote({ type: "error", text: "The due date can't be in the past." });
-    fiadoMut.mutate({ client_id: client.id, amount, description: fiadoDesc, due_date: fiadoDue });
+    fiadoMut.mutate({ client_id: client.id, amount, description: fiadoDesc, due_date: fiadoDue || defaultDue });
   };
 
   const payAmount = paymentType === "full" ? client?.balance ?? 0 : parseAmount(paymentAmount);
