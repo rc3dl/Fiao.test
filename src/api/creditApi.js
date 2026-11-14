@@ -1,6 +1,7 @@
 // Conversaciones con la base de datos para la pantalla Credit (fiados, pagos y ajustes).
 import { supabase } from "@/api/supabaseClient";
 import { computeClientStats } from "@/lib/credit";
+import { fetchAllPages } from "@/lib/supabasePagination";
 import { mutate, newId, readOrLocal } from "@/offline";
 
 function check(error) {
@@ -56,17 +57,18 @@ function buildLedger(clientRows, entryRows, settings) {
 }
 
 async function fetchLedgerRemote() {
-  const [clientsRes, entriesRes, settings] = await Promise.all([
-    supabase.from("clients").select("id, name, phone, credit_limit, archived, created_at").order("name"),
-    supabase
-      .from("credit_entries")
-      .select("id, client_id, kind, amount, description, due_date, created_at")
-      .order("created_at", { ascending: false }),
+  const [clientRows, entryRows, settings] = await Promise.all([
+    fetchAllPages((from, to) =>
+      supabase.from("clients").select("id, name, phone, credit_limit, archived, created_at")
+        .order("name").order("id").range(from, to)
+    ),
+    fetchAllPages((from, to) =>
+      supabase.from("credit_entries").select("id, client_id, kind, amount, description, due_date, created_at")
+        .order("created_at", { ascending: false }).order("id").range(from, to)
+    ),
     fetchSettings(),
   ]);
-  check(clientsRes.error);
-  check(entriesRes.error);
-  return buildLedger(clientsRes.data, entriesRes.data, settings);
+  return buildLedger(clientRows, entryRows, settings);
 }
 
 // Todo lo que necesita la pantalla Credit en una sola carga.
