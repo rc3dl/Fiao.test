@@ -77,6 +77,43 @@ create table if not exists public.products (
   unique (id, owner_id)
 );
 
+-- Prevent new fractional quantities for indivisible units. Legacy rows can still
+-- be edited in unrelated fields and corrected one quantity at a time.
+create or replace function public.enforce_whole_product_units()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if TG_OP = 'INSERT' then
+    if new.unit not in ('lb', 'kg', 'liter')
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Stock and minimum stock must be whole numbers for unit %.', new.unit;
+    end if;
+    return new;
+  end if;
+
+  if new.unit not in ('lb', 'kg', 'liter') then
+    if new.unit is distinct from old.unit
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Correct stock and minimum stock before changing to whole units.';
+    end if;
+    if new.stock is distinct from old.stock and new.stock <> trunc(new.stock) then
+      raise exception 'Stock must be a whole number for unit %.', new.unit;
+    end if;
+    if new.min_stock is distinct from old.min_stock and new.min_stock <> trunc(new.min_stock) then
+      raise exception 'Minimum stock must be a whole number for unit %.', new.unit;
+    end if;
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists products_whole_units_guard on public.products;
+create trigger products_whole_units_guard
+  before insert or update of unit, stock, min_stock on public.products
+  for each row execute function public.enforce_whole_product_units();
+
 
 -- -----------------------------------------------------------------------------
 -- 4. CREDIT ENTRIES - every credit ("fiado") and every payment ("pago").
