@@ -38,8 +38,8 @@ export default function Footer() {
                 ? "Una forma más clara de organizar clientes, fiados, pagos e inventario para pequeños negocios."
                 : "A clearer way to organize customers, credit, payments, and inventory for small businesses."}
             </p>
-            <Link to="/contact" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[#F9D103] transition hover:gap-2">
-              {es ? "Hablemos" : "Get in touch"} <ArrowUpRight className="h-4 w-4" />
+            <Link to="/login" className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-[#F9D103] transition hover:gap-2">
+              {es ? "Acceso a tu cuenta" : "Sign in to your account"} <ArrowUpRight className="h-4 w-4" />
             </Link>
           </div>
 
