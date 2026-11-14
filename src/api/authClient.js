@@ -211,20 +211,24 @@ export const base44 = {
       if (IS_NATIVE) {
         // Android: los proveedores OAuth se abren en el navegador del sistema (no dentro del WebView)
         // y Supabase devuelve a la app por NATIVE_REDIRECT (lo recibe src/native/native.js).
+        const nativeOptions = { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true };
+        // Microsoft Entra requires the email scope for Supabase to receive a usable email address.
+        if (provider === "azure") nativeOptions.scopes = "email";
         const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
-          options: { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true },
+          options: nativeOptions,
         });
         fail(oauthError);
         const { Browser } = await import("@capacitor/browser");
         await Browser.open({ url: data.url });
         return;
       }
+      const webOptions = { redirectTo: window.location.origin + withBase(returnTo) };
+      // Microsoft Entra requires the email scope for Supabase to receive a usable email address.
+      if (provider === "azure") webOptions.scopes = "email";
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: {
-          redirectTo: window.location.origin + withBase(returnTo),
-        },
+        options: webOptions,
       });
 
       fail(error);
