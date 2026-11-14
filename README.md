@@ -140,7 +140,7 @@ Create a new project at [supabase.com](https://supabase.com). In **Project Setti
 
 ### 2. Create the database
 
-> **Warning:** pasting the whole `schema.sql` is only for a **new, empty** project. For a database that already exists, do not re-run it: review the real schema and apply the numbered migrations once, in order. For the safe offline-sales and archive protections, apply `001_idempotent_fiado_sale.sql` first and `003_sync_and_archive_guards.sql` second. Migration `002_whole_units_and_fifo_view.sql` is an optional product-unit safeguard. These SQL files are prepared in the repository; they are **not** applied automatically to your Supabase project.
+> **Warning:** pasting the whole `schema.sql` is only for a **new, empty** project. For a database that already exists, do not re-run it: review the real schema and apply the numbered migrations once, in order. For the safe offline-sales and archive protections, apply `001_idempotent_fiado_sale.sql` first and `003_sync_and_archive_guards.sql` second. Migration `003_sync_and_archive_guards.sql` also installs the safe whole-unit product guard; `002_whole_units_and_fifo_view.sql` can be used separately when only that guard is needed. These SQL files are prepared in the repository; they are **not** applied automatically to your Supabase project.
 
 For a new project, open **SQL Editor → New query**, paste the whole content of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**. It creates all tables, the security policies, and the database rules (see [Database overview](#database-overview)).
 
