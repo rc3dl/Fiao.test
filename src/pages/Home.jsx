@@ -10,7 +10,6 @@ import {
   ChevronDown,
   CreditCard,
   Download,
-  FileSpreadsheet,
   MessageCircle,
   Package,
   ShieldCheck,
