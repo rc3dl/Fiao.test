@@ -1,6 +1,7 @@
 // Funcionamiento sin conexión de la app Android: copia local de los datos, cola de cambios y sincronización.
 // En la web (IS_NATIVE = false) nada de esto actúa: las funciones llaman directo a Supabase como siempre.
 import { supabase } from "@/api/supabaseClient";
+import { fetchAllPages } from "@/lib/supabasePagination";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { queryClientInstance } from "@/lib/query-client";
@@ -154,18 +155,17 @@ export async function pullAll() {
   if (c.pulling) return c.pulling;
   c.pulling = (async () => {
     try {
-      const results = await Promise.all([
-        supabase.from("clients").select("*"),
-        supabase.from("products").select("*"),
-        supabase.from("credit_entries").select("*"),
+      const [clients, products, entries, profileResult] = await Promise.all([
+        fetchAllPages((from, to) => supabase.from("clients").select("*").order("id").range(from, to)),
+        fetchAllPages((from, to) => supabase.from("products").select("*").order("id").range(from, to)),
+        fetchAllPages((from, to) => supabase.from("credit_entries").select("*").order("id").range(from, to)),
         supabase.from("profiles").select("*").eq("id", c.userId).maybeSingle(),
       ]);
-      const failed = results.find((r) => r.error);
-      if (failed) {
-        if (isNetworkError(failed.error)) c.engine.setOnline(false);
+      if (profileResult.error) {
+        if (isNetworkError(profileResult.error)) c.engine.setOnline(false);
         return false;
       }
-      const [clients, products, entries, profile] = results.map((r) => r.data);
+      const profile = profileResult.data;
       await Promise.all([
         putMirror(c.userId, "clients", clients),
         putMirror(c.userId, "products", products),
