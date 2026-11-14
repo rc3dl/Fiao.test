@@ -4,6 +4,7 @@ import { SUPABASE_CONFIGURED, APP_URL, NATIVE_REDIRECT } from "@/lib/env";
 import { isNetworkError, readStoredSession } from "@/lib/network";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
+import { mutate } from "@/offline";
 
 // Solo en la app Android: mensajes claros cuando falla la conexión con Supabase.
 const NO_CONFIG =
@@ -78,24 +79,36 @@ export const base44 = {
     },
 
     async updateMe(fields) {
-      const { data } = await supabase.auth.getUser();
-
-      if (!data?.user) {
+      const { data } = await supabase.auth.getSession();
+      const user = data?.session?.user || (IS_NATIVE ? readStoredSession()?.user : null);
+      if (!user) {
         const e = Object.assign(new Error("Not authenticated"), { status: 401 });
         throw e;
       }
 
+      const values = {};
+      PROFILE_FIELDS.forEach((k) => {
+        if (k in fields) values[k] = fields[k];
+      });
       const row = {
-        id: data.user.id,
+        id: user.id,
+        ...values,
         updated_at: new Date().toISOString(),
       };
 
-      PROFILE_FIELDS.forEach((k) => {
-        if (k in fields) row[k] = fields[k];
-      });
-
-      const { error } = await supabase.from("profiles").upsert(row);
-      fail(error);
+      return mutate(
+        {
+          type: "profile.update",
+          table: "profiles",
+          record_id: user.id,
+          group: `profiles:${user.id}`,
+          payload: values,
+        },
+        async () => {
+          const { error } = await supabase.from("profiles").upsert(row);
+          fail(error);
+        }
+      );
     },
 
     async loginViaEmailPassword(email, password) {
