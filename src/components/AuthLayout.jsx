@@ -46,7 +46,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer = null,
     : ["Organized customers and credit", "Inventory and sales under control", "Clear business reports"];
 
   return (
-    <div className="auth-page relative flex min-h-screen items-center justify-center overflow-hidden bg-[#F6F2E8] px-4 py-6 sm:px-6 sm:py-8">
+    <div className="auth-page relative flex min-h-screen items-center justify-center overflow-x-hidden bg-[#F6F2E8] px-4 py-6 sm:px-6 sm:py-8">
       <div aria-hidden="true" className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-[#F9D103]/20 blur-3xl" />
       <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-[#B91C1C]/10 blur-3xl" />
 
