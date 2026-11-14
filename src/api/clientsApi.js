@@ -75,7 +75,7 @@ export async function archiveClient(id) {
   });
 }
 
-// Anota que se mandó un recordatorio (para no repetirlo seguido).
+// Registra el recordatorio solo después de que el comerciante confirme que lo envió.
 export async function logReminder({ client_id, message }) {
   return mutate(
     { type: "reminder.log", table: "reminders", record_id: newId(), group: `clients:${client_id}`, payload: { client_id, message } },
