@@ -7,10 +7,9 @@
 --   * Añade p_occurred_at: fecha/hora real de la venta (ventas hechas sin conexión).
 --   * Calcula el vencimiento por defecto con la fecha de Panamá de esa fecha.
 -- Impacto en datos existentes: ninguno (no toca filas). Reemplaza solo la función.
--- La firma antigua (4 args) se elimina para evitar ambigüedad de sobrecarga en PostgREST;
--- el cliente ya llama con los parámetros nuevos y, mientras no se aplique, cae a la firma antigua.
--- Tras aplicarla, apply_sync_op (schema.sql sección 14) sigue funcionando: llama con 4 args
--- y ahora también pasa record_id y occurred_at (ver schema.sql actualizado).
+-- La firma antigua (4 args) se elimina para impedir ventas sin clave de idempotencia.
+-- Después de esta migración, aplica también 003_sync_and_archive_guards.sql para actualizar
+-- apply_sync_op y proteger los archivos de clientes con deuda. No se usa fallback inseguro.
 
 begin;
 
@@ -42,15 +41,16 @@ begin
     raise exception 'Not authenticated.';
   end if;
 
-  -- Idempotencia: misma clave = misma venta. El bloqueo evita que dos reintentos simultáneos la apliquen a la vez.
-  if p_request_id is not null then
-    perform pg_advisory_xact_lock(hashtext('fiado_sale:' || p_request_id::text));
-    select e.id into v_entry_id
-      from public.credit_entries e
-     where e.id = p_request_id and e.owner_id = v_owner;
-    if found then
-      return v_entry_id;
-    end if;
+  -- Toda venta debe llevar una clave. El bloqueo por dueño + clave serializa los reintentos.
+  if p_request_id is null then
+    raise exception 'An idempotency key is required to register a credit sale.';
+  end if;
+  perform pg_advisory_xact_lock(hashtext(v_owner::text), hashtext('fiado_sale:' || p_request_id::text));
+  select e.id into v_entry_id
+    from public.credit_entries e
+   where e.id = p_request_id and e.owner_id = v_owner;
+  if found then
+    return v_entry_id;
   end if;
 
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
