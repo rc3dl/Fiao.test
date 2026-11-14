@@ -239,13 +239,14 @@ export function SaleTab({ products, query, initialCart = {} }) {
     if (problem) return setMsg({ type: "error", text: problem });
     if (due && due < today) return setMsg({ type: "error", text: "The due date can't be in the past." });
     const items = lines.map((l) => ({ product_id: l.product.id, quantity: l.qty }));
-    const sig = JSON.stringify([client.id, items, due, note]);
+    const effectiveDue = due || addDays(today, settings.default_due_days);
+    const sig = JSON.stringify([client.id, items, effectiveDue, note]);
     if (saleKey.current.sig !== sig) saleKey.current = { sig, id: newId() };
     sale.mutate({
       client_id: client.id,
       items,
       request_id: saleKey.current.id,
-      due_date: due,
+      due_date: effectiveDue,
       note,
       total,
       clientName: client.name,
