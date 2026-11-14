@@ -8,12 +8,8 @@ export const SUPABASE_URL = clean(import.meta.env.VITE_SUPABASE_URL);
 export const SUPABASE_ANON_KEY = clean(import.meta.env.VITE_SUPABASE_ANON_KEY);
 export const SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 
-// Botón "Continuar con Google". En Android se abre en el navegador del sistema (Google bloquea los WebView)
-// y se vuelve a la app por NATIVE_REDIRECT.
-export const ENABLE_GOOGLE = clean(import.meta.env.VITE_ENABLE_GOOGLE) === "true";
-
-// Dirección a la que se regresa a la app Android tras Google (esquema propio declarado en AndroidManifest.xml).
-// También debe estar en Supabase: Authentication > URL Configuration > Redirect URLs.
+// Dirección a la que regresan los proveedores OAuth en la app Android (esquema declarado en AndroidManifest.xml).
+// Debe estar permitida en Supabase: Authentication > URL Configuration > Redirect URLs.
 export const NATIVE_REDIRECT = "com.fiao.panama://auth";
 
 // Dirección pública de la web (por ejemplo https://usuario.github.io/Fia-O), sin "/" final.
