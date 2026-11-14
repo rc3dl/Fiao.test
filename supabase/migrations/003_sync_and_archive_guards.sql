@@ -1,9 +1,370 @@
--- 003 - Actualiza la sincronización idempotente y protege el historial de crédito.
--- REQUIERE haber aplicado primero 001_idempotent_fiado_sale.sql.
--- No modifica filas existentes; añade validaciones transaccionales para escrituras futuras.
+-- 003 - Upgrade transaccional de la sincronización y de las reglas de seguridad.
+-- Se puede aplicar sobre el esquema base de FIA'O. No modifica filas económicas existentes.
+-- Reinstala la firma segura de ventas (también si una versión anterior de 001 ya se ejecutó),
+-- crea el historial offline si todavía no existe y añade las protecciones concurrentes.
+--
+-- Aplicar una vez después de revisar el esquema existente. No ejecutar sobre otro proyecto.
 
 begin;
 
+-- Preparación para sincronización central: columnas de versión e historial por operación.
+alter table public.clients
+  add column if not exists updated_at timestamptz not null default now();
+alter table public.products
+  add column if not exists updated_at timestamptz not null default now();
+
+create table if not exists public.audit_log (
+  id uuid primary key,
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  table_name text not null,
+  record_id uuid,
+  operation text not null check (operation in ('create', 'update', 'delete')),
+  op_type text not null,
+  old_values jsonb,
+  new_values jsonb,
+  device_id text,
+  occurred_at timestamptz not null,
+  synced_at timestamptz not null default now(),
+  status text not null check (status in ('applied', 'conflict', 'rejected')),
+  message text
+);
+
+create index if not exists audit_log_owner_time_idx
+  on public.audit_log (owner_id, occurred_at desc);
+create index if not exists audit_log_record_idx
+  on public.audit_log (owner_id, record_id);
+
+alter table public.audit_log enable row level security;
+drop policy if exists audit_log_select_own on public.audit_log;
+create policy audit_log_select_own on public.audit_log
+  for select to authenticated using (owner_id = auth.uid());
+drop policy if exists audit_log_insert_own on public.audit_log;
+create policy audit_log_insert_own on public.audit_log
+  for insert to authenticated with check (owner_id = auth.uid());
+grant select, insert on public.audit_log to authenticated;
+
+-- Restricción compatible con productos existentes que tengan cantidades fraccionarias heredadas.
+alter table public.products
+  drop constraint if exists products_whole_units_chk;
+
+create or replace function public.enforce_whole_product_units()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  if TG_OP = 'INSERT' then
+    if new.unit not in ('lb', 'kg', 'liter')
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Stock and minimum stock must be whole numbers for unit %.', new.unit;
+    end if;
+    return new;
+  end if;
+
+  if new.unit not in ('lb', 'kg', 'liter') then
+    if new.unit is distinct from old.unit
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Correct stock and minimum stock before changing to whole units.';
+    end if;
+    if new.stock is distinct from old.stock and new.stock <> trunc(new.stock) then
+      raise exception 'Stock must be a whole number for unit %.', new.unit;
+    end if;
+    if new.min_stock is distinct from old.min_stock and new.min_stock <> trunc(new.min_stock) then
+      raise exception 'Minimum stock must be a whole number for unit %.', new.unit;
+    end if;
+  end if;
+  return new;
+end;
+$;
+
+drop trigger if exists products_whole_units_guard on public.products;
+create trigger products_whole_units_guard
+  before insert or update of unit, stock, min_stock on public.products
+  for each row execute function public.enforce_whole_product_units();
+
+
+-- -----------------------------------------------------------------------------
+-- 4. CREDIT ENTRIES - every credit ("fiado") and every payment ("pago").
+--    A customer's debt is NEVER stored: it is always calculated as
+--    sum(fiado) - sum(pago). Entries cannot be edited or deleted (see policies).
+-- -----------------------------------------------------------------------------
+create table if not exists public.credit_entries (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  client_id uuid not null,
+  kind text not null check (kind in ('fiado', 'pago')),
+  amount numeric(10,2) not null check (amount > 0),
+  description text,
+  due_date date,
+  created_at timestamptz not null default now(),
+  unique (id, owner_id),
+  check (kind = 'fiado' or due_date is null),
+  foreign key (client_id, owner_id) references public.clients (id, owner_id)
+);
+
+-- Products taken in each credit sale (price is saved as it was at that moment)
+create table if not exists public.credit_entry_items (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  entry_id uuid not null,
+  product_id uuid,
+  product_name text not null,
+  quantity numeric(10,2) not null check (quantity > 0),
+  unit_price numeric(10,2) not null check (unit_price >= 0),
+  foreign key (entry_id, owner_id) references public.credit_entries (id, owner_id) on delete cascade,
+  foreign key (product_id, owner_id) references public.products (id, owner_id)
+);
+
+
+-- -----------------------------------------------------------------------------
+-- 5. REMINDERS - log of payment reminders sent to customers
+-- -----------------------------------------------------------------------------
+create table if not exists public.reminders (
+  id uuid primary key default gen_random_uuid(),
+  owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  client_id uuid not null,
+  channel text not null default 'whatsapp',
+  message text,
+  sent_at timestamptz not null default now(),
+  foreign key (client_id, owner_id) references public.clients (id, owner_id)
+);
+
+
+-- -----------------------------------------------------------------------------
+-- 6. CONTACT MESSAGES - messages sent from the Contact page
+-- -----------------------------------------------------------------------------
+create table if not exists public.contact_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid default auth.uid() references auth.users(id) on delete set null,
+  name text not null,
+  email text not null,
+  message text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.contact_messages drop constraint if exists contact_messages_name_len;
+alter table public.contact_messages drop constraint if exists contact_messages_email_len;
+alter table public.contact_messages drop constraint if exists contact_messages_message_len;
+alter table public.contact_messages add constraint contact_messages_name_len check (char_length(trim(name)) between 1 and 100);
+alter table public.contact_messages add constraint contact_messages_email_len check (char_length(trim(email)) between 3 and 200);
+alter table public.contact_messages add constraint contact_messages_message_len check (char_length(trim(message)) between 10 and 2000);
+
+
+-- -----------------------------------------------------------------------------
+-- 7. INDEXES
+-- -----------------------------------------------------------------------------
+create index if not exists clients_owner_idx on public.clients (owner_id);
+create index if not exists products_owner_idx on public.products (owner_id);
+create index if not exists credit_entries_owner_created_idx on public.credit_entries (owner_id, created_at desc);
+create index if not exists credit_entries_client_created_idx on public.credit_entries (client_id, created_at desc);
+
+
+-- -----------------------------------------------------------------------------
+-- 8. ROW LEVEL SECURITY - each merchant only sees their own data
+-- -----------------------------------------------------------------------------
+alter table public.profiles enable row level security;
+alter table public.clients enable row level security;
+alter table public.products enable row level security;
+alter table public.credit_entries enable row level security;
+alter table public.credit_entry_items enable row level security;
+alter table public.reminders enable row level security;
+alter table public.contact_messages enable row level security;
+
+-- profiles
+drop policy if exists "profiles_select_own" on public.profiles;
+drop policy if exists "profiles_insert_own" on public.profiles;
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_select_own" on public.profiles for select using (auth.uid() = id);
+create policy "profiles_insert_own" on public.profiles for insert with check (auth.uid() = id);
+create policy "profiles_update_own" on public.profiles for update using (auth.uid() = id) with check (auth.uid() = id);
+
+-- clients, products, reminders: full access to your own rows
+drop policy if exists "clients_own" on public.clients;
+drop policy if exists "products_own" on public.products;
+drop policy if exists "reminders_own" on public.reminders;
+create policy "clients_own" on public.clients for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "products_own" on public.products for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+create policy "reminders_own" on public.reminders for all using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+
+-- credit entries and their items: you can read and add, but NOT edit or delete.
+-- (A mistake is fixed with a new entry, so the history stays trustworthy.)
+drop policy if exists "credit_entries_select_own" on public.credit_entries;
+drop policy if exists "credit_entries_insert_own" on public.credit_entries;
+drop policy if exists "credit_entry_items_select_own" on public.credit_entry_items;
+drop policy if exists "credit_entry_items_insert_own" on public.credit_entry_items;
+create policy "credit_entries_select_own" on public.credit_entries for select using (owner_id = auth.uid());
+create policy "credit_entries_insert_own" on public.credit_entries for insert with check (owner_id = auth.uid());
+create policy "credit_entry_items_select_own" on public.credit_entry_items for select using (owner_id = auth.uid());
+create policy "credit_entry_items_insert_own" on public.credit_entry_items for insert with check (owner_id = auth.uid());
+
+-- contact messages: signed-in users can send and read their own
+drop policy if exists "contact_messages_insert_own" on public.contact_messages;
+drop policy if exists "contact_messages_select_own" on public.contact_messages;
+create policy "contact_messages_insert_own" on public.contact_messages for insert to authenticated with check (user_id = auth.uid());
+create policy "contact_messages_select_own" on public.contact_messages for select to authenticated using (user_id = auth.uid());
+
+
+-- -----------------------------------------------------------------------------
+-- 9. VIEW - balance and overdue amount per customer (handy for SQL reports;
+--    the app calculates the same numbers in src/lib/credit.js)
+-- -----------------------------------------------------------------------------
+create or replace view public.client_balances with (security_invoker = true) as
+select
+  c.id as client_id,
+  c.owner_id,
+  coalesce(sum(case when e.kind = 'fiado' then e.amount end), 0) as total_fiado,
+  coalesce(sum(case when e.kind = 'pago' then e.amount end), 0) as total_pagado,
+  coalesce(sum(case when e.kind = 'fiado' then e.amount else -e.amount end), 0) as balance,
+  greatest(
+    coalesce(sum(case when e.kind = 'fiado'
+               and e.due_date < (now() at time zone 'America/Panama')::date
+               then e.amount end), 0)
+    - coalesce(sum(case when e.kind = 'pago' then e.amount end), 0),
+    0
+  ) as overdue_balance
+from public.clients c
+left join public.credit_entries e on e.client_id = c.id
+group by c.id, c.owner_id;
+
+
+-- -----------------------------------------------------------------------------
+-- 10. AUTOMATIC PROFILE - create the profile row when someone signs up
+-- -----------------------------------------------------------------------------
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.profiles (id) values (new.id) on conflict do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists products_whole_units_guard on public.products;
+create trigger products_whole_units_guard
+  before insert or update of unit, stock, min_stock on public.products
+  for each row execute function public.enforce_whole_product_units();
+
+-- Reinstalar la función de venta con clave obligatoria y bloqueo por propietario + request_id.
+drop function if exists public.register_fiado_sale(uuid, jsonb, date, text);
+
+create or replace function public.register_fiado_sale(
+  p_client_id uuid,
+  p_items jsonb,
+  p_due_date date default null,
+  p_note text default null,
+  p_request_id uuid default null,
+  p_occurred_at timestamptz default null
+)
+returns uuid
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_owner uuid := auth.uid();
+  v_row record;
+  v_prod record;
+  v_total numeric(12,2) := 0;
+  v_summary text := '';
+  v_entry_id uuid;
+  v_when timestamptz := least(coalesce(p_occurred_at, now()), now());
+  v_due date := p_due_date;
+begin
+  if v_owner is null then
+    raise exception 'Not authenticated.';
+  end if;
+
+  -- Toda venta debe llevar una clave. El bloqueo por dueño + clave serializa los reintentos.
+  if p_request_id is null then
+    raise exception 'An idempotency key is required to register a credit sale.';
+  end if;
+  perform pg_advisory_xact_lock(hashtext(v_owner::text), hashtext('fiado_sale:' || p_request_id::text));
+  select e.id into v_entry_id
+    from public.credit_entries e
+   where e.id = p_request_id and e.owner_id = v_owner;
+  if found then
+    return v_entry_id;
+  end if;
+
+  if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
+    raise exception 'Add at least one product.';
+  end if;
+  if not exists (
+    select 1 from public.clients c
+     where c.id = p_client_id and c.owner_id = v_owner and not c.archived
+  ) then
+    raise exception 'Customer not found.';
+  end if;
+
+  for v_row in
+    select (x ->> 'product_id')::uuid as pid, sum((x ->> 'quantity')::numeric) as qty
+      from jsonb_array_elements(p_items) as x
+     group by 1
+     order by 1
+  loop
+    if v_row.qty is null or v_row.qty <= 0 then
+      raise exception 'Quantities must be greater than 0.';
+    end if;
+
+    select p.* into v_prod
+      from public.products p
+     where p.id = v_row.pid and p.owner_id = v_owner and not p.archived
+       for update;
+    if not found then
+      raise exception 'Product not found.';
+    end if;
+    if v_prod.stock < v_row.qty then
+      raise exception 'Not enough stock of %: only % available.', v_prod.name, trim_scale(v_prod.stock);
+    end if;
+
+    v_total := v_total + round(v_prod.price * v_row.qty, 2);
+    v_summary := v_summary
+      || case when v_summary = '' then '' else ', ' end
+      || v_prod.name || ' x' || trim_scale(v_row.qty)::text;
+  end loop;
+
+  if v_total <= 0 then
+    raise exception 'The total must be greater than 0.';
+  end if;
+
+  if v_due is null then
+    v_due := (v_when at time zone 'America/Panama')::date
+      + coalesce((select p.default_due_days from public.profiles p where p.id = v_owner), 15);
+  end if;
+
+  insert into public.credit_entries (id, client_id, kind, amount, description, due_date, created_at)
+  values (coalesce(p_request_id, gen_random_uuid()), p_client_id, 'fiado', v_total,
+          coalesce(nullif(trim(p_note), ''), v_summary), v_due, v_when)
+  returning id into v_entry_id;
+
+  for v_row in
+    select (x ->> 'product_id')::uuid as pid, sum((x ->> 'quantity')::numeric) as qty
+      from jsonb_array_elements(p_items) as x
+     group by 1
+     order by 1
+  loop
+    select p.* into v_prod
+      from public.products p
+     where p.id = v_row.pid and p.owner_id = v_owner;
+
+    insert into public.credit_entry_items (entry_id, product_id, product_name, quantity, unit_price)
+    values (v_entry_id, v_prod.id, v_prod.name, v_row.qty, v_prod.price);
+
+    update public.products
+       set stock = stock - v_row.qty
+     where id = v_prod.id and owner_id = v_owner;
+  end loop;
+
+  return v_entry_id;
+end;
+$$;
+
+revoke all on function public.register_fiado_sale(uuid, jsonb, date, text, uuid, timestamptz) from public, anon;
+grant execute on function public.register_fiado_sale(uuid, jsonb, date, text, uuid, timestamptz) to authenticated;
+
+-- Toda entrada debe corresponder a un cliente activo. Comparte el lock con el guard de archivo.
 create or replace function public.check_credit_entry()
 returns trigger
 language plpgsql
@@ -238,6 +599,8 @@ create trigger clients_prevent_archive_with_balance
   before update of archived on public.clients
   for each row execute function public.prevent_client_archive_with_balance();
 
+-- Serializa idempotency check + aplicación + auditoría para que dos reintentos simultáneos
+-- con el mismo operation id no puedan ejecutar la operación económica dos veces.
 create or replace function public.apply_sync_op(p_op jsonb)
 returns jsonb
 language plpgsql
