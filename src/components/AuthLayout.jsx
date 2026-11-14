@@ -50,10 +50,10 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer = null,
   return (
     <div className="auth-page relative flex min-h-screen items-center justify-center overflow-x-hidden px-4 py-6 sm:px-6 sm:py-8">
       <div aria-hidden="true" className="pointer-events-none absolute -left-28 -top-28 h-80 w-80 rounded-full bg-[#F9D103]/20 blur-3xl" />
-      <div aria-hidden="true" className="pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full bg-[#B91C1C]/10 blur-3xl" />
+      <div aria-hidden="true" className="auth-glow-red pointer-events-none absolute -bottom-32 -right-24 h-96 w-96 rounded-full blur-3xl" />
 
       <div className="auth-card relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-[2rem] border shadow-[0_24px_80px_rgba(45,41,38,0.12)] lg:grid-cols-[0.88fr_1.12fr]">
-        <aside className="auth-sidebar relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex" style={{ backgroundColor: "#B91C1C" }}>
+        <aside className="auth-sidebar relative hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex">
           <div aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full border border-white/10" />
           <div aria-hidden="true" className="pointer-events-none absolute -bottom-28 -left-24 h-80 w-80 rounded-full border border-white/10" />
           <div className="relative">
@@ -122,7 +122,7 @@ export default function AuthLayout({ icon: Icon, title, subtitle, footer = null,
             </Link>
 
             <div className="auth-title-block mb-7 text-center">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "#FFF4B8", color: "#8B6500" }}>
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl" style={{ backgroundColor: "var(--surface-alt)", color: "var(--accent-text)" }}>
                 <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
               <h1 className="text-3xl font-bold tracking-tight" style={{ fontFamily: "Poppins" }}>{title}</h1>
