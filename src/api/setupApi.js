@@ -1,6 +1,7 @@
 // Guarda de una sola vez la configuración inicial, también en la cola offline de Android.
 import { supabase } from "@/api/supabaseClient";
 import { mutate } from "@/offline";
+import { mergeProfileCache } from "@/lib/profileCache";
 
 const SETUP_FIELDS = [
   "full_name",
@@ -23,7 +24,7 @@ export async function completeSetup(values) {
   );
   const row = { id: user.id, ...payload, updated_at: new Date().toISOString() };
 
-  return mutate(
+  const result = await mutate(
     {
       type: "profile.update",
       table: "profiles",
@@ -36,4 +37,6 @@ export async function completeSetup(values) {
       if (error) throw new Error(error.message);
     }
   );
+  mergeProfileCache(localStorage, user.id, payload);
+  return result;
 }
