@@ -71,10 +71,9 @@ export async function registerFiadoSale({ client_id, items, due_date, note, requ
     },
     async () => {
       const args = { p_client_id: client_id, p_items: items, p_due_date: due_date || null, p_note: note?.trim() || null };
-      let { error } = await supabase.rpc("register_fiado_sale", { ...args, p_request_id: requestId });
-      // TEMPORAL: si la migración 001 todavía no está aplicada, la función antigua no conoce p_request_id.
+      const { error } = await supabase.rpc("register_fiado_sale", { ...args, p_request_id: requestId });
       if (error && /could not find the function|pgrst202|42883|schema cache/i.test(`${error.code} ${error.message}`)) {
-        ({ error } = await supabase.rpc("register_fiado_sale", args));
+        throw new Error("La base de datos aún no tiene la versión segura de ventas. Hay que aplicar la migración 001 antes de registrar ventas fiadas.");
       }
       check(error);
     }
