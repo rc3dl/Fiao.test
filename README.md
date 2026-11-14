@@ -33,7 +33,7 @@ It is a student project, built to be free to run: the whole stack below works on
 | Screen | What it does |
 |---|---|
 | **Landing page** | Public home page that explains the product. |
-| **Sign up / Log in** | Email and password, with a 6-digit code sent by email to verify the account, and password reset by email. Google sign-in is optional. |
+| **Sign up / Log in** | Email and password, with a 6-digit code sent by email to verify the account, and password reset by email. Google, Apple, Facebook, and Microsoft sign-in are available when enabled in Supabase. |
 | **Setup** | First-time screen shown before the dashboard: asks for your name, store name, optional phone/RUC/address, and your credit rules. It only appears while the profile is incomplete. |
 | **Dashboard** | Live numbers (outstanding debt, payments today, customers with debt, overdue accounts), who to collect first, recent activity, low-stock alert and quick links. |
 | **Clients** | Create, edit, search, filter (On Time / Pending / Overdue) and archive customers. Prepares a WhatsApp reminder for customers who owe. |
@@ -106,7 +106,6 @@ Create a file named `.env.local` in the project root (next to `package.json`):
 ```bash
 VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
 VITE_SUPABASE_ANON_KEY=your-public-anon-key
-VITE_ENABLE_GOOGLE=false
 ```
 
 This file is ignored by Git. Never commit it.
@@ -185,9 +184,16 @@ In **Authentication**:
    - **Site URL:** `http://localhost:5173` while developing (your production URL once deployed).
    - **Redirect URLs:** add `http://localhost:5173/**` and `https://YOUR-APP.vercel.app/**`.
 
-### 4. Google sign-in (optional)
+### 4. Social sign-in (optional)
 
-The "Continue with Google" button is hidden by default. To enable it, create OAuth credentials in Google Cloud, add Supabase's callback URL, enable **Authentication → Providers → Google**, and set `VITE_ENABLE_GOOGLE=true`.
+FIA'O includes Google, Apple, Facebook, and Microsoft (Azure) sign-in buttons. The buttons are always visible; a provider works only after you configure it in Supabase:
+
+1. Open **Authentication → Sign In / Providers** in your Supabase project.
+2. Enable the provider you want to use and enter its Client ID and Client Secret.
+3. In the provider's developer console, register Supabase's callback URL: `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`.
+4. Add the website address and `com.fiao.panama://auth` to Supabase **Authentication → URL Configuration → Redirect URLs**.
+
+Provider availability is controlled in Supabase; no build-time feature flag or rebuild is needed when enabling a configured provider. See the [Supabase social sign-in guide](https://supabase.com/docs/guides/auth/social-sign-in) for provider-specific setup.
 
 ### Quick check
 
@@ -199,7 +205,6 @@ Sign up with a real email address, enter the 6-digit code, complete the Setup sc
 |---|---|---|
 | `VITE_SUPABASE_URL` | Yes | Project URL of your Supabase project. |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Public anon (or publishable) key. Safe for the browser because Row Level Security protects the data. |
-| `VITE_ENABLE_GOOGLE` | No | `true` shows the Google sign-in button (web and Android app). Default `false`. |
 | `VITE_APP_URL` | No | Public address of the web (for example `https://YOUR-USER.github.io/Fia-O`). The Android app uses it for links that open outside the app, such as password reset. |
 | `VITE_UPDATES_URL` | No | Address of the Vercel deployment that serves `/api/version` (Android app updates). If empty, the app reads the `app_releases` table in Supabase directly. |
 | `VITE_BASE` | No | Overrides the publishing path. By default it is `/` locally and in Vercel, and `/<repository-name>/` in GitHub Pages (taken from `GITHUB_REPOSITORY`; use `VITE_BASE` for a custom domain). |
@@ -209,7 +214,7 @@ Vite only exposes variables that start with `VITE_`. They are read when the dev 
 | Environment | Where the variables come from | Build command |
 |---|---|---|
 | Local (`npm run dev`) | `.env.local` | `npm run dev` |
-| GitHub Pages | Repository secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the workflow sets `VITE_ENABLE_GOOGLE` from the repository variable of the same name, `true` if not defined) | automatic on every push to `main` |
+| GitHub Pages | Repository secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` | automatic on every push to `main` |
 | Android app | `.env.local` | `npm run android` |
 
 GitHub Pages builds and Android builds stop with a clear message if the two Supabase variables are missing, so a broken login is never published.
@@ -228,9 +233,9 @@ After adding or updating Capacitor plugins, run `npm run android` again.
 **Supabase settings for the app.** In **Authentication → URL Configuration → Redirect URLs** add:
 
 - the web address (`VITE_APP_URL`), so the password reset link works;
-- `com.fiao.panama://auth`, so Google sign-in can return to the app.
+- `com.fiao.panama://auth`, so social sign-in providers can return to the app.
 
-**Google sign-in on Android.** Google does not allow sign-in inside a WebView, so the app opens the system browser and comes back through the `com.fiao.panama://auth` link (declared in `AndroidManifest.xml` and handled in `src/native/native.js`). Set `VITE_ENABLE_GOOGLE=true` in `.env.local` to show the button. No change is needed in Google Cloud: it uses the same Supabase callback as the web.
+**Social sign-in on Android.** OAuth providers open in the system browser rather than inside the WebView, then return through `com.fiao.panama://auth` (declared in `AndroidManifest.xml` and handled in `src/native/native.js`). The same provider buttons and Supabase configuration are used by the web and the APK; no build-time feature flag is required.
 
 **Notifications.** The bell stays fixed at the top-right corner of every screen. The app also schedules one local Android notification at 9:00 when there are overdue accounts or low-stock products (the same alerts as the bell, and only if alerts are on in Profile). It is rescheduled every time the app is opened and cancelled on sign-out. It cannot know about changes made while the app stays closed: that would need a server (push notifications with Firebase). Android asks for the notification permission the first time.
 
