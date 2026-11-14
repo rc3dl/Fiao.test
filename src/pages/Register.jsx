@@ -89,7 +89,7 @@ export default function Register() {
           ? "El acceso con " + name + " aún no está habilitado. Actívalo en Supabase, en Authentication > Sign In / Providers."
           : "Sign-in with " + name + " is not enabled yet. Enable it in Supabase under Authentication > Sign In / Providers.");
       } else {
-        setError(message || t("Could not start Google sign-in. Try again."));
+        setError(message || (language === "es" ? "No se pudo iniciar el acceso. Inténtalo de nuevo." : "Could not start sign-in. Try again."));
       }
     } finally {
       setOAuthLoading(null);
@@ -167,7 +167,7 @@ export default function Register() {
         </>
       }
     >
-      <OAuthOptions onSelect={handleOAuth} loadingProvider={oauthLoading} />
+      <OAuthOptions onSelect={handleOAuth} loadingProvider={oauthLoading || (loading ? "email" : null)} />
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
