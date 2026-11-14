@@ -62,7 +62,7 @@ export default function Contact() {
     const { t } = useLanguage();
   const { user } = useAuth();
   // Nombre y correo ya vienen de tu cuenta; solo cambian si la persona los edita.
-  const [draft, setDraft] = useState({});
+  const [draft, setDraft] = useState(/** @type {{ name?: string; email?: string }} */ ({}));
   const [message, setMessage] = useState("");
   const [note, setNote] = useState(null);
 
