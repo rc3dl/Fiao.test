@@ -4,18 +4,17 @@ import { App } from "@capacitor/app";
 import { supabase } from "@/api/supabaseClient";
 import { NATIVE_REDIRECT } from "@/lib/env";
 import { withBase } from "@/lib/withBase";
+import { parseNativeAuthReturn } from "@/lib/oauthReturn";
 
 const authError = (message) => window.dispatchEvent(new CustomEvent("fiao:auth-error", { detail: message }));
 
 // Google devuelve a la app con com.fiao.panama://auth#access_token=...&refresh_token=...
 async function finishGoogleLogin(url) {
-  const params = new URLSearchParams(url.split("#")[1] || url.split("?")[1] || "");
-  if (params.get("error")) return authError(params.get("error_description") || params.get("error"));
+  const result = parseNativeAuthReturn(url, NATIVE_REDIRECT);
+  if (result.kind === "ignore") return; // enlace que no es el de retorno: se descarta sin tocar la sesión
+  if (result.kind === "error") return authError(result.message);
 
-  const access_token = params.get("access_token");
-  const refresh_token = params.get("refresh_token");
-  if (!access_token || !refresh_token) return authError("No se pudo completar el inicio de sesión con Google.");
-
+  const { access_token, refresh_token } = result;
   const { error } = await supabase.auth.setSession({ access_token, refresh_token });
   if (error) return authError(error.message);
   window.location.assign(withBase("/dashboard"));
@@ -46,6 +45,6 @@ export async function initNative() {
 
   // Regreso desde el navegador tras iniciar sesión con Google.
   App.addListener("appUrlOpen", ({ url }) => {
-    if (url && url.startsWith(NATIVE_REDIRECT)) finishGoogleLogin(url);
+    if (url) finishGoogleLogin(url).catch(() => authError("No se pudo completar el inicio de sesión con Google."));
   });
 }

@@ -13,7 +13,7 @@ export default function ResetPassword() {
     const { t } = useLanguage();
     const [ready, setReady] = useState(null);
    useEffect(() => {
-     base44.auth.hasSession().then(setReady);
+     base44.auth.hasSession().then(setReady).catch(() => setReady(false)); // si falla, se muestra "enlace no válido" en vez del spinner eterno
    }, []);
 
   const [newPassword, setNewPassword] = useState("");

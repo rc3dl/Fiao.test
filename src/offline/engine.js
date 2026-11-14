@@ -27,7 +27,7 @@ const bySeq = (a, b) => a.seq - b.seq;
 
 export const backoffMs = (attempts) => Math.min(2 ** attempts * 2000, 300000);
 
-// Almacenamiento en memoria (pruebas y respaldo si IndexedDB no está disponible).
+// Almacenamiento en memoria: SOLO para pruebas. La app no lo usa como respaldo (se perdería al cerrar).
 export function createMemoryStorage() {
   const map = new Map();
   const meta = new Map();
@@ -317,6 +317,8 @@ export function createEngine({
     // Operaciones que todavía deben verse reflejadas en pantalla (las rechazadas no).
     pendingOps: () => unresolved().filter((o) => o.status !== "rejected").sort(bySeq),
     hasUnsynced: () => unresolved().some((o) => o.status === "pending" || o.status === "syncing"),
+    // Cualquier operación que el usuario todavía no resolvió: pendientes, en envío, conflictos y rechazos.
+    hasUnresolved: () => unresolved().length > 0,
     subscribe(fn) {
       listeners.add(fn);
       return () => listeners.delete(fn);

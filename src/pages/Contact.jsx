@@ -12,7 +12,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 export const FAQS = [
   {
     q: "Does it work without internet?",
-    a: "Not at the moment. FIA'O needs an internet connection to save and load your notebook, so make sure you're online when you register credits and payments.",
+    a: "The web version needs an internet connection. The Android app can keep working offline with limits: changes are saved on the phone and sent when the connection returns, and they are only confirmed once they sync.",
   },
   {
     q: "How do I start using the app?",

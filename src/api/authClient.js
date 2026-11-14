@@ -43,11 +43,20 @@ export const base44 = {
 
       const u = data.user;
 
-      const { data: p } = await supabase
+      const { data: p, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", u.id)
         .maybeSingle();
+      if (profileError) {
+        // Sin conexión en Android: se usa el perfil guardado. Cualquier otro fallo NO se convierte en un perfil vacío.
+        const cached = IS_NATIVE && isNetworkError(profileError) ? localStorage.getItem(`fiao:me:${u.id}`) : null;
+        if (cached) return JSON.parse(cached);
+        const e = new Error(profileError.message || "Could not load the profile");
+        e.status = 503;
+        e.type = "profile_error";
+        throw e;
+      }
 
       const me = {
         id: u.id,

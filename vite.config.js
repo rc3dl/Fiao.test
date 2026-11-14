@@ -4,6 +4,12 @@ import { fileURLToPath, URL } from 'node:url'
 
 const REQUIRED = ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY']
 
+// En GitHub Actions, GITHUB_REPOSITORY = "usuario/repositorio": la ruta de Pages sale del nombre real del repositorio.
+const pagesBase = () => {
+  const repo = (process.env.GITHUB_REPOSITORY || '').split('/')[1]
+  return repo ? `/${repo}/` : '/Fia-O/'
+}
+
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   // .env, .env.local, .env.<modo> y las variables del sistema (por ejemplo los secrets de GitHub Actions)
@@ -23,9 +29,9 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    // GitHub Pages sirve la web en /Fia-O/. Local, Vercel y la app Android la sirven en la raíz.
+    // GitHub Pages (proyecto) sirve la web en /<nombre-del-repositorio>/. Local, Vercel y la app Android, en la raíz.
     // VITE_BASE permite cambiarlo (por ejemplo, un dominio propio).
-    base: env.VITE_BASE || (isAndroid ? '/' : isCI ? '/Fia-O/' : '/'),
+    base: env.VITE_BASE || (isAndroid ? '/' : isCI ? pagesBase() : '/'),
     plugins: [react()],
     resolve: {
       alias: {

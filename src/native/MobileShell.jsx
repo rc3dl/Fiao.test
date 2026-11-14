@@ -49,7 +49,7 @@ export default function MobileShell() {
 
   // Copia local, cola de cambios y sincronización: arrancan con la sesión y se detienen al cerrarla
   useEffect(() => {
-    if (isAuthenticated && user?.id) startOffline(user.id);
+    if (isAuthenticated && user?.id) startOffline(user.id).catch(() => {}); // si falla, doStart ya publica storageUnavailable y la app sigue en modo directo
     else if (!isLoadingAuth) stopOffline();
   }, [isAuthenticated, isLoadingAuth, user?.id]);
 

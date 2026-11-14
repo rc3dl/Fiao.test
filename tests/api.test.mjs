@@ -77,11 +77,87 @@ test("release: valida los datos y guarda con la llave del servidor", async () =>
   let sent;
   globalThis.fetch = async (url, init) => { sent = { url, init }; return { ok: true, status: 201, json: async () => [{ id: "r1", version_code: 10001 }] }; };
   const ok = fakeRes();
-  await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: "10001", apk_url: "https://a/b.apk", mandatory: true, notes_es: "Mejoras" } }, ok);
+  await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: 10001, apk_url: "https://a/b.apk", mandatory: true, notes_es: "Mejoras" } }, ok);
   assert.equal(ok.statusCode, 201);
   const saved = JSON.parse(sent.init.body);
   assert.equal(saved.version_code, 10001);
   assert.equal(saved.mandatory, true);
   assert.equal(saved.platform, "android");
   assert.equal(sent.init.headers.apikey, "svc");
+});
+
+async function postRelease(body, { rawBody } = {}) {
+  process.env.SUPABASE_URL = "https://x.supabase.co";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "svc";
+  process.env.RELEASE_ADMIN_TOKEN = "secreto-largo";
+  let called = false;
+  globalThis.fetch = async () => { called = true; return { ok: true, status: 201, json: async () => [{ id: "r1" }] }; };
+  const res = fakeRes();
+  await release({ method: "POST", headers: { authorization: "Bearer secreto-largo" }, body: rawBody ?? body }, res);
+  return { res, called };
+}
+const good = { version_name: "1.0.1", version_code: 10001, apk_url: "https://a.supabase.co/b.apk" };
+
+test("release: JSON mal formado, vacío o que no es un objeto → 400 sin tocar Supabase", async () => {
+  for (const raw of ["{no es json", "[1,2]", "null", '"texto"']) {
+    const { res, called } = await postRelease(null, { rawBody: raw });
+    assert.equal(res.statusCode, 400, raw);
+    assert.equal(called, false);
+  }
+  const { res } = await postRelease(null, { rawBody: "" });
+  assert.equal(res.statusCode, 400);
+});
+
+test("release: tipos estrictos (nada de 'false' como texto ni '10001abc')", async () => {
+  const cases = [
+    { ...good, mandatory: "false" },
+    { ...good, published: "false" },
+    { ...good, mandatory: 1 },
+    { ...good, version_code: "10001abc" },
+    { ...good, version_code: 1.5 },
+    { ...good, version_code: -3 },
+    { ...good, version_code: 1e12 },
+    { ...good, version_name: "latest" },
+    { ...good, version_name: 7 },
+    { ...good, apk_url: "javascript:alert(1)" },
+    { ...good, apk_url: "https://user:pw@a.com/b.apk" },
+    { ...good, notes_es: 5 },
+  ];
+  for (const body of cases) {
+    const { res, called } = await postRelease(body);
+    assert.equal(res.statusCode, 400, JSON.stringify(body));
+    assert.equal(called, false);
+  }
+});
+
+test("release: booleanos reales se respetan y published por defecto es true", async () => {
+  let sent;
+  const { res } = await postRelease({ ...good, published: false, mandatory: false });
+  assert.equal(res.statusCode, 201);
+  globalThis.fetch = async (u, init) => { sent = JSON.parse(init.body); return { ok: true, status: 201, json: async () => [{}] }; };
+  const r2 = fakeRes();
+  await release({ method: "POST", headers: { authorization: "Bearer secreto-largo" }, body: good }, r2);
+  assert.equal(sent.published, true);
+  assert.equal(sent.mandatory, false);
+});
+
+test("release: duplicado → 409; error o respuesta no JSON de Supabase → 502; sin red → 502", async () => {
+  const { res: _ } = await postRelease(good);
+  const run = async () => {
+    const r = fakeRes();
+    await release({ method: "POST", headers: { authorization: "Bearer secreto-largo" }, body: good }, r);
+    return r;
+  };
+  globalThis.fetch = async () => ({ ok: false, status: 409, json: async () => ({ message: "dup" }) });
+  assert.equal((await run()).statusCode, 409);
+  globalThis.fetch = async () => ({ ok: false, status: 500, json: async () => { throw new Error("html"); } });
+  assert.equal((await run()).statusCode, 502);
+  globalThis.fetch = async () => { throw new Error("ECONNRESET"); };
+  assert.equal((await run()).statusCode, 502);
+});
+
+test("release: sin variables de entorno → 500", async () => {
+  const res = fakeRes();
+  await release({ method: "POST", headers: { authorization: "Bearer x" }, body: good }, res);
+  assert.equal(res.statusCode, 500);
 });

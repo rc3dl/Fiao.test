@@ -76,8 +76,12 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", safeReturnTo());
+  const handleGoogle = async () => {
+    try {
+      await base44.auth.loginWithProvider("google", safeReturnTo());
+    } catch (err) {
+      setError(err?.message || t("Could not start Google sign-in. Try again."));
+    }
   };
 
   if (showOtp) {

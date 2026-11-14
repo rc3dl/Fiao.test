@@ -1,6 +1,6 @@
 // Todos los cálculos de la pantalla Reports. Aquí no hay pantalla: solo reglas y números,
 // así se pueden probar aparte y se usan igual para la vista, el Excel y el PDF.
-import { addDays, dateInPanama, todayPanama, annotateEntries, money, shortYmd } from "@/lib/credit";
+import { addDays, dateInPanama, todayPanama, annotateEntries, money, shortYmd } from "./credit.js";
 
 const toCents = (n) => Math.round(Number(n || 0) * 100);
 
@@ -236,7 +236,9 @@ export function buildReport({ clients, entries, names = {}, from, to, filter = "
       status: status.get(e.id) || "Paid",
     }));
 
-  return { range: { from, to }, cards, chart, breakdown, issued: sum(issuedList) / 100, rows };
+  // Semántica: tarjetas de cartera (activeCredit, pending, overdue*) = saldo ACTUAL a la fecha `asOf`;
+  // collected, issued, chart, breakdown y rows = actividad del período seleccionado.
+  return { range: { from, to }, asOf: today, cards, chart, breakdown, issued: sum(issuedList) / 100, rows };
 }
 
 // Páginas de la tabla de movimientos.
@@ -261,10 +263,10 @@ export function reportTables(report, { filterLabel: customers = "All customers",
     ? { summary: "Resumen", transactions: "Transacciones", metric: "Indicador", value: "Valor", empty: "No hay movimientos en este período.", page: "Página" }
     : { summary: "Summary", transactions: "Transactions", metric: "Metric", value: "Value", empty: "No transactions in this period.", page: "Page" };
   const summary = [
-    { label: es ? "Crédito activo total" : "Total active credit", value: c.activeCredit },
+    { label: es ? "Crédito activo hoy" : "Active credit today", value: c.activeCredit },
     { label: es ? "Cobrado en el período" : "Collected in period", value: c.collected },
-    { label: es ? "Saldos pendientes" : "Pending balances", value: c.pending },
-    { label: es ? "Monto vencido" : "Overdue amount", value: c.overdueAmount },
+    { label: es ? "Saldos pendientes hoy" : "Pending balances today", value: c.pending },
+    { label: es ? "Monto vencido hoy" : "Overdue amount today", value: c.overdueAmount },
     { label: es ? "Fiados registrados en el período" : "Credit issued in period", value: report.issued },
   ].map((item) => ({ ...item, text: money(item.value) }));
   summary.push({ label: es ? "Clientes" : "Customers", value: c.customers, text: String(c.customers) });

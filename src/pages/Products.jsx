@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import { Search, Pencil, Trash2, Plus, Bell, Package, Minus, X } from "lucide-react";
 import { fetchProducts, addProduct, editProduct, archiveProduct, registerFiadoSale, PRODUCT_KEYS } from "@/api/productsApi";
 import { fetchLedger, LEDGER_KEYS } from "@/api/creditApi";
+import { newId } from "@/offline";
 import { money, isLowStock, effectiveLimit, addDays, todayPanama, shortYmd } from "@/lib/credit";
 import {
   UNITS,
@@ -48,7 +49,7 @@ function Note({ note }) {
       className="text-sm rounded-xl px-3 py-2 mt-3"
       style={{ backgroundColor: ok ? "var(--ok-bg)" : "var(--bad-bg)", color: ok ? "var(--ok-text)" : "var(--bad-text)" }}
     >
-      {t(note.text)}
+      {note.textKey ? t(note.textKey, note.vars) : t(note.text)}
     </p>
   );
 }
@@ -191,6 +192,7 @@ export function SaleTab({ products, query, initialCart = {} }) {
   const [due, setDue] = useState("");
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState(null);
+  const saleKey = useRef({ sig: "", id: "" }); // clave de idempotencia: la misma mientras la venta no cambie
 
   const client = clients.find((c) => c.id === clientId) || clients[0];
   const today = todayPanama();
@@ -214,12 +216,18 @@ export function SaleTab({ products, query, initialCart = {} }) {
 
   const sale = useMutation({
     mutationFn: registerFiadoSale,
-    onSuccess: (_, vars) => {
+    onSuccess: (result, vars) => {
       [...LEDGER_KEYS, ...PRODUCT_KEYS].forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
       setCart({});
       setDue("");
       setNote("");
-      setMsg({ type: "ok", text: `Sale registered: ${money(vars.total)} added to ${vars.clientName}'s debt.` });
+      saleKey.current = { sig: "", id: "" };
+      // Sin conexión la venta queda en la cola del teléfono: todavía no está confirmada en la nube.
+      setMsg(
+        result?.status === "queued"
+          ? { type: "ok", textKey: "Sale saved on this phone: {amount} for {name}. It will be confirmed when it syncs.", vars: { amount: money(vars.total), name: vars.clientName } }
+          : { type: "ok", textKey: "Sale registered: {amount} added to {name}'s debt.", vars: { amount: money(vars.total), name: vars.clientName } }
+      );
     },
     onError: (e) => setMsg({ type: "error", text: e.message }),
   });
@@ -230,9 +238,13 @@ export function SaleTab({ products, query, initialCart = {} }) {
     const problem = checkSale({ lines, client, limit, autoBlock: settings.auto_block });
     if (problem) return setMsg({ type: "error", text: problem });
     if (due && due < today) return setMsg({ type: "error", text: "The due date can't be in the past." });
+    const items = lines.map((l) => ({ product_id: l.product.id, quantity: l.qty }));
+    const sig = JSON.stringify([client.id, items, due, note]);
+    if (saleKey.current.sig !== sig) saleKey.current = { sig, id: newId() };
     sale.mutate({
       client_id: client.id,
-      items: lines.map((l) => ({ product_id: l.product.id, quantity: l.qty })),
+      items,
+      request_id: saleKey.current.id,
       due_date: due,
       note,
       total,

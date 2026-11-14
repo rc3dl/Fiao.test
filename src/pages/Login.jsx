@@ -38,8 +38,12 @@ export default function Login() {
     }
   };
 
-  const handleGoogle = () => {
-    base44.auth.loginWithProvider("google", returnTo);
+  const handleGoogle = async () => {
+    try {
+      await base44.auth.loginWithProvider("google", returnTo);
+    } catch (err) {
+      setError(err?.message || t("Could not start Google sign-in. Try again."));
+    }
   };
 
   return (

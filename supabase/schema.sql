@@ -324,11 +324,14 @@ create trigger credit_entry_rules
 --     enough stock, limit exceeded...) NOTHING is saved.
 --     items = [{ "product_id": "<uuid>", "quantity": 2 }, ...]
 -- -----------------------------------------------------------------------------
+drop function if exists public.register_fiado_sale(uuid, jsonb, date, text);
 create or replace function public.register_fiado_sale(
   p_client_id uuid,
   p_items jsonb,
   p_due_date date default null,
-  p_note text default null
+  p_note text default null,
+  p_request_id uuid default null,
+  p_occurred_at timestamptz default null
 )
 returns uuid
 language plpgsql
@@ -341,10 +344,24 @@ declare
   v_total numeric(12,2) := 0;
   v_summary text := '';
   v_entry_id uuid;
+  v_when timestamptz := least(coalesce(p_occurred_at, now()), now());
+  v_due date := p_due_date;
 begin
   if v_owner is null then
     raise exception 'Not authenticated.';
   end if;
+
+  -- Idempotencia: misma clave = misma venta. El bloqueo evita que dos reintentos simultáneos la apliquen a la vez.
+  if p_request_id is not null then
+    perform pg_advisory_xact_lock(hashtext('fiado_sale:' || p_request_id::text));
+    select e.id into v_entry_id
+      from public.credit_entries e
+     where e.id = p_request_id and e.owner_id = v_owner;
+    if found then
+      return v_entry_id;
+    end if;
+  end if;
+
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
     raise exception 'Add at least one product.';
   end if;
@@ -355,7 +372,6 @@ begin
     raise exception 'Customer not found.';
   end if;
 
-  -- 1) Check products and stock, and calculate the total with the DATABASE prices
   for v_row in
     select (x ->> 'product_id')::uuid as pid, sum((x ->> 'quantity')::numeric) as qty
       from jsonb_array_elements(p_items) as x
@@ -387,12 +403,16 @@ begin
     raise exception 'The total must be greater than 0.';
   end if;
 
-  -- 2) Register the credit (the trigger above checks the limit and sets the due date)
-  insert into public.credit_entries (client_id, kind, amount, description, due_date)
-  values (p_client_id, 'fiado', v_total, coalesce(nullif(trim(p_note), ''), v_summary), p_due_date)
+  if v_due is null then
+    v_due := (v_when at time zone 'America/Panama')::date
+      + coalesce((select p.default_due_days from public.profiles p where p.id = v_owner), 15);
+  end if;
+
+  insert into public.credit_entries (id, client_id, kind, amount, description, due_date, created_at)
+  values (coalesce(p_request_id, gen_random_uuid()), p_client_id, 'fiado', v_total,
+          coalesce(nullif(trim(p_note), ''), v_summary), v_due, v_when)
   returning id into v_entry_id;
 
-  -- 3) Save which products were taken and lower the stock
   for v_row in
     select (x ->> 'product_id')::uuid as pid, sum((x ->> 'quantity')::numeric) as qty
       from jsonb_array_elements(p_items) as x
@@ -661,7 +681,9 @@ begin
         (v_pay ->> 'client_id')::uuid,
         v_pay -> 'items',
         nullif(v_pay ->> 'due_date', '')::date,
-        nullif(v_pay ->> 'note', '')
+        nullif(v_pay ->> 'note', ''),
+        v_rid,    -- clave de idempotencia = id de la operación
+        v_when    -- fecha original de la venta
       );
       select to_jsonb(e) into v_new from public.credit_entries e where e.id = v_rid;
 

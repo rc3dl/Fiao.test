@@ -1,7 +1,7 @@
 // Aquí están TODAS las conversaciones con la base de datos sobre clientes.
 // Las pantallas no hablan con Supabase directamente: llaman a estas funciones.
 import { supabase } from "@/api/supabaseClient";
-import { computeClientStats } from "@/lib/credit";
+import { computeClientStats, parseLimit } from "@/lib/credit";
 import { mutate, newId, readOrLocal } from "@/offline";
 
 function check(error) {
@@ -45,7 +45,10 @@ export function fetchClients() {
   );
 }
 
-const cleanLimit = (v) => (v === "" || v === null || v === undefined ? null : Number(v));
+const cleanLimit = (v) => {
+  const n = parseLimit(v);
+  return n === null || Number.isNaN(n) ? null : n;
+};
 
 export async function addClient({ name, phone, credit_limit }) {
   const values = { name: name.trim(), phone: phone?.trim() || null, credit_limit: cleanLimit(credit_limit) };

@@ -1,5 +1,5 @@
 // Reglas de los formularios de la pantalla Profile (datos del negocio y reglas de crédito).
-import { parseAmount, validatePhone } from "@/lib/credit";
+import { parseAmount, validatePhone } from "./credit.js";
 
 const MAX_TEXT = 200;
 

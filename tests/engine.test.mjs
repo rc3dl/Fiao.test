@@ -234,3 +234,19 @@ test("cada usuario solo ve sus propias operaciones", async () => {
   await b.load();
   assert.equal(b.getSnapshot().ops.length, 0);
 });
+
+test("hasUnresolved: un rechazo o conflicto solo cuenta como sin resolver (y hasUnsynced no)", async () => {
+  const { engine, remote } = setup({
+    online: false,
+    rules: (op) => (op.record_id === "bad" ? { status: "rejected", message: "no" } : null),
+  });
+  await engine.submit(clientCreate("bad"));
+  remote.online = true;
+  engine.setOnline(true);
+  await engine.flush({ force: true });
+  assert.equal(engine.getSnapshot().rejected, 1);
+  assert.equal(engine.hasUnsynced(), false, "ya no hay nada por enviar");
+  assert.equal(engine.hasUnresolved(), true, "pero el rechazo sigue sin resolver: no debe borrarse al cerrar sesión");
+  await engine.discard(engine.getSnapshot().ops.find((o) => o.status === "rejected").id);
+  assert.equal(engine.hasUnresolved(), false);
+});

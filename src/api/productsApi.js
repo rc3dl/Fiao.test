@@ -57,22 +57,25 @@ export async function archiveProduct(id) {
 // Registra una venta fiada completa en un solo paso: el fiado, sus productos y el descuento de stock.
 // Si algo falla (poco stock, límite excedido), no se guarda NADA.
 // items = [{ product_id, quantity }]
-export async function registerFiadoSale({ client_id, items, due_date, note }) {
+// request_id: clave de idempotencia. El servidor guarda la venta con ese id; repetirla no duplica el fiado ni el descuento de stock.
+// La pantalla debe generarla una vez por venta y reutilizarla si el usuario reintenta.
+export async function registerFiadoSale({ client_id, items, due_date, note, request_id }) {
+  const requestId = request_id || newId();
   return mutate(
     {
       type: "sale.fiado",
       table: "credit_entries",
-      record_id: newId(),
+      record_id: requestId,
       group: `clients:${client_id}`,
       payload: { client_id, items, due_date: due_date || null, note: note?.trim() || null },
     },
     async () => {
-      const { error } = await supabase.rpc("register_fiado_sale", {
-        p_client_id: client_id,
-        p_items: items,
-        p_due_date: due_date || null,
-        p_note: note?.trim() || null,
-      });
+      const args = { p_client_id: client_id, p_items: items, p_due_date: due_date || null, p_note: note?.trim() || null };
+      let { error } = await supabase.rpc("register_fiado_sale", { ...args, p_request_id: requestId });
+      // TEMPORAL: si la migración 001 todavía no está aplicada, la función antigua no conoce p_request_id.
+      if (error && /could not find the function|pgrst202|42883|schema cache/i.test(`${error.code} ${error.message}`)) {
+        ({ error } = await supabase.rpc("register_fiado_sale", args));
+      }
       check(error);
     }
   );

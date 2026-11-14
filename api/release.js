@@ -16,6 +16,32 @@ const same = (a, b) => {
   return x.length === y.length && timingSafeEqual(x, y);
 };
 
+// Validación estricta: solo se aceptan los tipos exactos (nada de "false" como texto ni "10001abc").
+function validateRelease(b) {
+  const problems = [];
+  if (typeof b.version_name !== "string" || !/^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$/.test(b.version_name.trim()) || b.version_name.length > 40) {
+    problems.push("version_name must be a version like 1.0.1");
+  }
+  const code = typeof b.version_code === "string" && /^\d{1,10}$/.test(b.version_code) ? Number(b.version_code) : b.version_code;
+  if (!Number.isSafeInteger(code) || code <= 0 || code > 2100000000) {
+    problems.push("version_code must be a positive integer");
+  }
+  let url = null;
+  try {
+    url = typeof b.apk_url === "string" && b.apk_url.length <= 2048 ? new URL(b.apk_url) : null;
+  } catch {
+    url = null;
+  }
+  if (!url || url.protocol !== "https:" || url.username || url.password) problems.push("apk_url must be a valid https URL");
+  for (const key of ["mandatory", "published"]) {
+    if (key in b && typeof b[key] !== "boolean") problems.push(`${key} must be true or false (boolean)`);
+  }
+  for (const key of ["notes_es", "notes_en"]) {
+    if (b[key] != null && (typeof b[key] !== "string" || b[key].length > 2000)) problems.push(`${key} must be text up to 2000 characters`);
+  }
+  return problems;
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
@@ -27,32 +53,47 @@ export default async function handler(req, res) {
   const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token || !same(token, RELEASE_ADMIN_TOKEN)) return res.status(401).json({ error: "Unauthorized" });
 
-  const b = typeof req.body === "string" ? JSON.parse(req.body || "{}") : req.body || {};
-  const versionCode = Number.parseInt(b.version_code, 10);
-  if (!b.version_name || !Number.isInteger(versionCode) || versionCode <= 0 || !/^https:\/\//.test(b.apk_url || "")) {
-    return res.status(400).json({ error: "version_name, version_code (a positive number) and apk_url (https) are required" });
+  let b = req.body;
+  if (typeof b === "string") {
+    try {
+      b = b.trim() ? JSON.parse(b) : {};
+    } catch {
+      return res.status(400).json({ error: "The body is not valid JSON" });
+    }
   }
+  if (!b || typeof b !== "object" || Array.isArray(b)) return res.status(400).json({ error: "The body must be a JSON object" });
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/app_releases`, {
-    method: "POST",
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify({
-      platform: "android",
-      version_name: String(b.version_name),
-      version_code: versionCode,
-      apk_url: b.apk_url,
-      notes_es: b.notes_es ?? null,
-      notes_en: b.notes_en ?? null,
-      mandatory: Boolean(b.mandatory),
-      published: b.published !== false,
-    }),
-  });
-  const data = await response.json().catch(() => null);
+  const problems = validateRelease(b);
+  if (problems.length) return res.status(400).json({ error: problems.join("; ") });
+  const versionCode = Number(b.version_code);
+
+  let response;
+  let data = null;
+  try {
+    response = await fetch(`${SUPABASE_URL}/rest/v1/app_releases`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=representation",
+      },
+      body: JSON.stringify({
+        platform: "android",
+        version_name: b.version_name.trim(),
+        version_code: versionCode,
+        apk_url: b.apk_url,
+        notes_es: b.notes_es ?? null,
+        notes_en: b.notes_en ?? null,
+        mandatory: b.mandatory ?? false,
+        published: b.published ?? true,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    data = await response.json().catch(() => null);
+  } catch {
+    return res.status(502).json({ error: "Could not reach the database" });
+  }
   if (!response.ok) return res.status(response.status === 409 ? 409 : 502).json({ error: data?.message || "Could not save the release" });
   return res.status(201).json({ release: data?.[0] ?? null });
 }

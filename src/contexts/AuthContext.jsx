@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useRef } from 'react';
 import { base44 } from '@/api/authClient';
 import { supabase } from '@/api/supabaseClient';
 import { IS_NATIVE } from '@/native/useIsNative';
@@ -14,9 +14,25 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [appPublicSettings] = useState(null);
+  const authedRef = useRef(false);
+  authedRef.current = isAuthenticated;
 
   useEffect(() => {
     checkAppState();
+  }, []);
+
+  // Reacciona a inicio, renovación y cierre de sesión (también en otra pestaña). Sin llamadas a Supabase dentro del callback.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsAuthenticated(false);
+      } else if (event === 'SIGNED_IN' && !authedRef.current) {
+        // Solo si la app aún no tenía usuario (evita recargar todo cuando Supabase repite el evento al volver a la pestaña)
+        setTimeout(() => checkUserAuth(), 0); // fuera del callback para evitar bloqueos de Supabase
+      }
+    });
+    return () => data?.subscription?.unsubscribe();
   }, []);
 
   const checkAppState = async () => {
@@ -55,6 +71,8 @@ export const AuthProvider = ({ children }) => {
       setAuthChecked(true);
       if (error.status === 401 || error.status === 403) {
         setAuthError({ type: 'auth_required', message: 'Authentication required' });
+      } else if (error.type === 'profile_error') {
+        setAuthError({ type: 'profile_error', message: error.message });
       }
     }
   };

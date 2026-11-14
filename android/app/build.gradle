@@ -3,8 +3,18 @@ apply plugin: 'com.android.application'
 // La versión de la app sale de package.json ("1.2.3" -> versionCode 10203), así nunca se olvida subirla.
 // El número de versión debe crecer en cada publicación para que Android permita actualizar sin desinstalar.
 def appPackage = new groovy.json.JsonSlurper().parse(file("../../package.json"))
-def versionParts = appPackage.version.tokenize('.')
-def appVersionCode = versionParts[0].toInteger() * 10000 + versionParts[1].toInteger() * 100 + versionParts[2].replaceAll('[^0-9].*', '').toInteger()
+// Formato obligatorio MAJOR.MINOR.PATCH (se admite sufijo -algo). MINOR y PATCH deben ser < 100 para que el código sea único y creciente.
+def semver = (appPackage.version =~ /^(\d+)\.(\d+)\.(\d+)([-+].*)?$/)
+if (!semver.matches()) {
+    throw new GradleException("package.json: version '${appPackage.version}' no es MAJOR.MINOR.PATCH")
+}
+def vMajor = semver.group(1).toInteger()
+def vMinor = semver.group(2).toInteger()
+def vPatch = semver.group(3).toInteger()
+if (vMinor > 99 || vPatch > 99 || vMajor > 200000) {
+    throw new GradleException("package.json: MINOR y PATCH deben ser 0-99 (versionCode = MAJOR*10000 + MINOR*100 + PATCH)")
+}
+def appVersionCode = vMajor * 10000 + vMinor * 100 + vPatch
 
 android {
     namespace = "com.fiao.panama"

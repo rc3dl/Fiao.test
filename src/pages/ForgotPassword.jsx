@@ -13,17 +13,20 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setFailed(false);
     try {
       await base44.auth.resetPasswordRequest(email);
+      setSent(true); // mensaje genérico: no revela si la cuenta existe
     } catch {
-      // Always show success regardless
+      // Fallo técnico (red, límite de envíos, configuración): aviso neutro que no dice nada sobre la cuenta y permite reintentar
+      setFailed(true);
     } finally {
       setLoading(false);
-      setSent(true);
     }
   };
 
@@ -44,6 +47,11 @@ export default function ForgotPassword() {
         </p>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
+          {failed && (
+            <p role="alert" className="text-sm text-destructive">
+              {t("We could not complete the request right now. Please try again in a moment.")}
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">{t("Email address")}</Label>
             <div className="relative">

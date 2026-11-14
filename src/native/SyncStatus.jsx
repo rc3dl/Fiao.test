@@ -137,10 +137,16 @@ export function SyncSheet({ open, onClose }) {
           </Section>
         )}
 
+        {s.storageUnavailable && (
+          <p role="alert" className="text-sm rounded-xl px-3 py-2 mb-3" style={{ backgroundColor: "var(--bad-bg)", color: "var(--bad-text)" }}>
+            {t("Offline storage is not available on this phone, so changes cannot be saved offline. Connect to the internet to keep working.")}
+          </p>
+        )}
+
         <Section title={t("Pending changes")}>
           {pending.length === 0 ? (
             <p className="flex items-center gap-2 text-sm" style={{ color: "var(--text-muted)" }}>
-              <CheckCircle2 className="w-4 h-4" style={{ color: "var(--ok-text)" }} /> {t("Nothing pending. Everything is saved in the cloud.")}
+              <CheckCircle2 className="w-4 h-4" style={{ color: "var(--ok-text)" }} /> {t("Nothing waiting to be sent.")}
             </p>
           ) : (
             pending.map((op) => <Row key={op.id} title={describeOp(op, language, money)} subtitle={t("Saved on this phone")} />)

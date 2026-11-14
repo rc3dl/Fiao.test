@@ -14,8 +14,19 @@ function openDb() {
         if (!db.objectStoreNames.contains(OPS)) db.createObjectStore(OPS, { keyPath: "id" });
         if (!db.objectStoreNames.contains(KV)) db.createObjectStore(KV);
       };
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => {
+          db.close();
+          dbPromise = undefined;
+        };
+        resolve(db);
+      };
       request.onerror = () => reject(request.error);
+      request.onblocked = () => reject(new Error("IndexedDB blocked"));
+    }).catch((error) => {
+      dbPromise = undefined; // un fallo no se queda guardado: el siguiente intento vuelve a abrir
+      throw error;
     });
   }
   return dbPromise;

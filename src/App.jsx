@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -10,7 +11,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import ProfileGate from '@/components/ProfileGate';   // debajo de: import ProtectedRoute ...
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import TourProvider from '@/tour/TourProvider';
-import { LanguageProvider } from '@/contexts/LanguageContext';
+import { LanguageProvider, useLanguage } from '@/contexts/LanguageContext';
 import Home from '@/pages/Home';
 import Credit from '@/pages/Credit';
 import Products from '@/pages/Products';
@@ -36,6 +37,25 @@ function IndexRoute() {
   return IS_NATIVE ? <Navigate to="/login" replace /> : <Home />;
 }
 
+// Falló la lectura del perfil (red, permisos o esquema): se avisa y se permite reintentar, en lugar de mostrar un perfil vacío.
+const ProfileLoadError = ({ message }) => {
+  const { checkAppState } = useAuth();
+  const { t } = useLanguage();
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <p role="alert" className="text-sm">{t("We could not load your profile.")} {message}</p>
+      <button type="button" className="fiao-btn px-4" onClick={() => checkAppState()}>{t("Retry")}</button>
+    </div>
+  );
+};
+
+const RedirectToLogin = ({ go }) => {
+  React.useEffect(() => {
+    go();
+  }, [go]);
+  return null;
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -53,10 +73,11 @@ const AuthenticatedApp = () => {
   if (authError) {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
+    } else if (authError.type === 'profile_error') {
+      return <ProfileLoadError message={authError.message} />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
+      // Redirect to login automatically (como efecto, no durante el render)
+      return <RedirectToLogin go={navigateToLogin} />;
     }
   }
 

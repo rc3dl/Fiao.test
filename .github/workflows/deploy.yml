@@ -2,6 +2,7 @@ name: Deploy a GitHub Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -14,7 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
+  # Controles de calidad: si algo falla aquí, no se compila ni se publica nada.
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,13 +24,29 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # npm ci es lo ideal; si package-lock.json quedara desactualizado, npm install evita que se caiga el despliegue.
-      - run: npm ci || npm install --no-audit --no-fund
+      # Estricto: si package-lock.json no coincide con package.json, falla (hay que arreglar y subir el lockfile).
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+
+  build:
+    needs: verify
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          VITE_ENABLE_GOOGLE: "true"
+          # Por defecto "true" (comportamiento actual). Para apagarlo: Settings > Variables > Actions > VITE_ENABLE_GOOGLE = false
+          VITE_ENABLE_GOOGLE: ${{ vars.VITE_ENABLE_GOOGLE || 'true' }}
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3
         with:

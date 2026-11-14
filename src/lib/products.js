@@ -1,8 +1,12 @@
 // Reglas de productos y de la venta fiada. Todo el cálculo vive aquí (y se prueba aparte).
-import { parseAmount, checkFiado } from "@/lib/credit";
+import { parseAmount, checkFiado, MAX_AMOUNT } from "./credit.js";
 
 export const UNITS = ["unit", "lb", "kg", "bottle", "pack", "box", "bag", "liter"];
 export const DEFAULT_CATEGORIES = ["Pantry", "Bakery", "Beverages", "Dairy", "Snacks", "Cleaning", "Other"];
+
+// Solo peso y volumen admiten fracciones; el resto (unidad, botella, paquete, caja, bolsa) se vende por piezas enteras.
+export const FRACTIONAL_UNITS = ["lb", "kg", "liter"];
+export const allowsFraction = (unit) => FRACTIONAL_UNITS.includes(unit);
 
 const toCents = (n) => Math.round(Number(n || 0) * 100);
 
@@ -36,6 +40,10 @@ export function validateProduct(form) {
   const min_stock = minRaw === "" ? 0 : parseQty(minRaw);
   if (Number.isNaN(min_stock)) return { error: "Minimum stock must be a number (0 or more)." };
   if (!UNITS.includes(form.unit)) return { error: "Choose a unit." };
+  if (price > MAX_AMOUNT) return { error: "That price is too high." };
+  if (!allowsFraction(form.unit) && (!Number.isInteger(stock) || !Number.isInteger(min_stock))) {
+    return { error: "This unit only allows whole numbers (no decimals) for stock." };
+  }
   const image = (form.image_url || "").trim();
   if (image && !/^https?:\/\/\S+$/i.test(image)) return { error: "The image link must start with http:// or https://." };
   return {
@@ -74,6 +82,9 @@ export function checkSale({ lines, client, limit, autoBlock }) {
     if (l.qty > Number(l.product.stock)) {
       return `Not enough stock of ${l.product.name}: only ${stockLabel(l.product)} available.`;
     }
+  }
+  for (const l of lines) {
+    if (!allowsFraction(l.product.unit) && !Number.isInteger(l.qty)) return `${l.product.name} is sold in whole units: enter a whole number.`;
   }
   const total = cartTotal(lines);
   if (!(total > 0)) return "The total must be greater than 0.";

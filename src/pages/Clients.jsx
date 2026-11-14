@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { Search, Send, Plus, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { fetchClients, addClient, editClient, archiveClient, logReminder } from "@/api/clientsApi";
-import { money, initials, validatePhone, waLink, reminderText } from "@/lib/credit";
+import { money, initials, validatePhone, waLink, reminderText, parseLimit } from "@/lib/credit";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { confirmAction } from "@/native/confirm";
@@ -100,7 +100,7 @@ function ClientModal({ client, onClose }) {
     if (!name.trim()) return setError("Name is required.");
     const phoneError = validatePhone(phone);
     if (phoneError) return setError(phoneError);
-    if (limit !== "" && (Number.isNaN(Number(limit)) || Number(limit) < 0)) {
+    if (Number.isNaN(parseLimit(limit))) {
       return setError("Credit limit must be a number of 0 or more.");
     }
     save.mutate({ name, phone, credit_limit: limit });

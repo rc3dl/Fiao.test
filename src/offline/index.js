@@ -5,7 +5,8 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY } from "@/lib/env";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { queryClientInstance } from "@/lib/query-client";
 import { isNetworkError } from "@/lib/network";
-import { createEngine, createMemoryStorage, NetworkError } from "@/offline/engine";
+import { createEngine, NetworkError } from "@/offline/engine";
+import { defaultDueDate } from "@/lib/businessDate";
 import { applyPending } from "@/offline/overlay";
 import { createIdbStorage, getMirror, putMirror, wipeMirror } from "@/offline/idb";
 
@@ -16,7 +17,7 @@ const TICK_MS = 20 * 1000;
 export const newId = () => crypto.randomUUID();
 
 // ---------- estado visible para la interfaz ----------
-const EMPTY = { ready: false, online: true, flushing: false, pending: 0, conflicts: 0, rejected: 0, lastSyncAt: null, pulledAt: null, ops: [] };
+const EMPTY = { storageUnavailable: false, ready: false, online: true, flushing: false, pending: 0, conflicts: 0, rejected: 0, lastSyncAt: null, pulledAt: null, ops: [] };
 let published = EMPTY;
 const listeners = new Set();
 const publish = (patch) => {
@@ -33,6 +34,7 @@ let current = null; // { userId, engine, storage, mirrorAt, pulling, timer, clea
 
 export const getEngine = () => current?.engine ?? null;
 export const hasUnsynced = () => Boolean(current?.engine.hasUnsynced());
+export const hasUnresolved = () => Boolean(current?.engine.hasUnresolved());
 
 function deviceId() {
   let id = localStorage.getItem("fiao:device");
@@ -99,19 +101,25 @@ async function applyLegacy(op) {
     case "product.archive":
       return done(supabase.from("products").update({ archived: true }).eq("id", op.record_id));
     case "credit.fiado":
-    case "credit.pago":
+    case "credit.pago": {
+      const fiado = op.type === "credit.fiado";
+      // El vencimiento por defecto se calcula con la fecha ORIGINAL de la operación (Panamá), no con la de la sincronización.
+      let due = fiado ? p.due_date || null : null;
+      if (fiado && !due) due = defaultDueDate(op.occurred_at, await defaultDueDays());
       return done(
         supabase.from("credit_entries").insert({
           id: op.record_id,
           client_id: p.client_id,
-          kind: op.type === "credit.fiado" ? "fiado" : "pago",
+          kind: fiado ? "fiado" : "pago",
           amount: p.amount,
           description: p.description ?? null,
-          due_date: p.due_date ?? null,
+          due_date: due,
+          created_at: op.occurred_at, // conserva la hora real del movimiento (igual que apply_sync_op)
         })
       );
+    }
     case "sale.fiado":
-      return done(supabase.rpc("register_fiado_sale", { p_client_id: p.client_id, p_items: p.items, p_due_date: p.due_date || null, p_note: p.note || null }));
+      return done(callFiadoSale(op, p));
     case "reminder.log":
       return done(supabase.from("reminders").insert({ id: op.record_id, client_id: p.client_id, message: p.message, channel: "whatsapp" }));
     case "profile.update":
@@ -119,6 +127,22 @@ async function applyLegacy(op) {
     default:
       return { status: "rejected", message: `Unknown operation: ${op.type}` };
   }
+}
+
+// Días de plazo del comercio (perfil). Si no se pueden leer, 15 como en el servidor.
+async function defaultDueDays() {
+  const { data, error } = await supabase.from("profiles").select("default_due_days").eq("id", current?.userId).maybeSingle();
+  if (error && isNetworkError(error)) throw new NetworkError(error.message);
+  return Number(data?.default_due_days ?? 15);
+}
+
+// Venta fiada: la clave de idempotencia es el record_id de la operación (el mismo en cada reintento).
+// Si la migración 001 aún no está en la base, se usa la firma antigua (SIN idempotencia) hasta que se aplique.
+async function callFiadoSale(op, p) {
+  const args = { p_client_id: p.client_id, p_items: p.items, p_due_date: p.due_date || null, p_note: p.note || null };
+  const res = await supabase.rpc("register_fiado_sale", { ...args, p_request_id: op.record_id, p_occurred_at: op.occurred_at });
+  if (res.error && MISSING_FUNCTION.test(`${res.error.code} ${res.error.message}`)) return supabase.rpc("register_fiado_sale", args);
+  return res;
 }
 
 // ---------- copia local de los datos ----------
@@ -288,7 +312,10 @@ async function doStart(userId) {
     storage = createIdbStorage(userId);
     await storage.list();
   } catch {
-    storage = createMemoryStorage(); // si IndexedDB no está disponible, la app sigue funcionando (sin guardar al cerrar)
+    // Sin almacenamiento duradero NO se trabaja sin conexión: una cola en memoria se perdería al cerrar la app.
+    // Las escrituras van directo al servidor (y fallan de forma visible si no hay internet) y la interfaz avisa.
+    publish({ ...EMPTY, storageUnavailable: true });
+    return;
   }
 
   const engine = createEngine({
@@ -346,10 +373,11 @@ export function stopOffline() {
 export async function wipeOnLogout() {
   const c = current;
   if (!c) return;
-  const unsynced = c.engine.hasUnsynced();
+  // Se conserva toda operación sin resolver (pendientes, conflictos y rechazos); solo se borra la copia de datos.
+  const unresolved = c.engine.hasUnresolved();
   stopOffline();
   try {
-    await wipeMirror(c.userId, { keepOps: unsynced });
+    await wipeMirror(c.userId, { keepOps: unresolved });
   } catch {
     /* se ignora */
   }

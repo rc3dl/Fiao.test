@@ -95,21 +95,21 @@ export default function Credit() {
 
   const fiadoMut = useMutation({
     mutationFn: addFiado,
-    onSuccess: () => {
+    onSuccess: (result) => {
       refresh();
       setFiadoAmount("");
       setFiadoDesc("");
       setFiadoDue("");
-      setFiadoNote({ type: "ok", text: "Credit registered." });
+      setFiadoNote({ type: "ok", text: result?.status === "queued" ? "Credit saved on this phone. It will be confirmed when it syncs." : "Credit registered." });
     },
     onError: (e) => setFiadoNote({ type: "error", text: e.message }),
   });
   const payMut = useMutation({
     mutationFn: addPayment,
-    onSuccess: () => {
+    onSuccess: (result) => {
       refresh();
       setPaymentAmount("");
-      setPayNote({ type: "ok", text: "Payment registered." });
+      setPayNote({ type: "ok", text: result?.status === "queued" ? "Payment saved on this phone. It will be confirmed when it syncs." : "Payment registered." });
     },
     onError: (e) => setPayNote({ type: "error", text: e.message }),
   });

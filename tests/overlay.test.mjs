@@ -58,3 +58,28 @@ test("un cambio en conflicto se marca como conflicto", () => {
   const out = applyPending(base(), [op("client.update", { record_id: "c1", status: "conflict", payload: { name: "X" } })]);
   assert.equal(out.clients[0]._sync, "conflict");
 });
+
+import { panamaDate, defaultDueDate, addDaysToDate } from "../src/lib/businessDate.js";
+
+test("fecha de Panamá: 23:59 en Panamá sigue siendo el mismo día aunque en UTC ya sea el siguiente", () => {
+  assert.equal(panamaDate("2026-11-13T04:59:00Z"), "2026-11-12"); // 23:59 Panamá
+  assert.equal(panamaDate("2026-11-13T05:00:00Z"), "2026-11-13"); // 00:00 Panamá
+  assert.equal(panamaDate("2026-11-12T23:59:00Z"), "2026-11-12"); // 18:59
+  assert.equal(panamaDate("2026-11-13T00:00:00Z"), "2026-11-12"); // 19:00 Panamá
+});
+
+test("vencimiento por defecto: cambio de mes/año y año bisiesto", () => {
+  assert.equal(addDaysToDate("2026-12-25", 15), "2027-01-09");
+  assert.equal(addDaysToDate("2028-02-20", 15), "2028-03-06");
+  assert.equal(defaultDueDate("2026-12-31T23:30:00Z", 15), "2027-01-15"); // 18:30 Panamá del 31-dic
+  assert.equal(defaultDueDate("2027-01-01T03:00:00Z", 15), "2027-01-15"); // 22:00 Panamá del 31-dic
+});
+
+test("el overlay calcula el vencimiento con la fecha de Panamá, no con la de UTC", () => {
+  const out = applyPending(base(), [
+    op("credit.fiado", { record_id: "e9", occurred_at: "2026-11-13T03:00:00.000Z", payload: { client_id: "c1", amount: 5 } }), // 22:00 del 12-nov en Panamá
+    op("sale.fiado", { record_id: "s9", occurred_at: "2026-11-13T03:00:00.000Z", payload: { client_id: "c1", items: [{ product_id: "p1", quantity: 1 }] } }),
+  ]);
+  assert.equal(out.entries.find((e) => e.id === "e9").due_date, "2026-11-27");
+  assert.equal(out.entries.find((e) => e.id === "s9").due_date, "2026-11-27");
+});

@@ -191,7 +191,7 @@ export default function Reports() {
               <div data-tour="reports-cards" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
                 <div className="p-4 rounded-2xl" style={card}>
                   <TrendingUp className="w-5 h-5 mb-2" style={{ color: "var(--accent-text)" }} />
-                  <p className="text-[11px] font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>{t("TOTAL ACTIVE CREDIT")}</p>
+                  <p className="text-[11px] font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>{t("ACTIVE CREDIT TODAY")}</p>
                   <p className="font-bold text-xl" style={{ color: "var(--text)" }}>{money(c.activeCredit)}</p>
                   <Change change={c.activeCreditChange} suffix={t("since the start of the period")} upIsGood={false} />
                 </div>
@@ -203,7 +203,7 @@ export default function Reports() {
                 </div>
                 <div className="p-4 rounded-2xl" style={card}>
                   <AlertTriangle className="w-5 h-5 mb-2" style={{ color: "var(--accent-text)" }} />
-                  <p className="text-[11px] font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>{t("PENDING BALANCES")}</p>
+                  <p className="text-[11px] font-semibold tracking-wide" style={{ color: "var(--text-muted)" }}>{t("PENDING BALANCES TODAY")}</p>
                   <p className="font-bold text-xl" style={{ color: "var(--text)" }}>{money(c.pending)}</p>
                   <p className="text-xs font-semibold mt-1" style={{ color: c.overdueCustomers > 0 ? "var(--bad-text)" : "var(--ok-text)" }}>
                     {c.overdueCustomers > 0

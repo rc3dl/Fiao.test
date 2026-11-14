@@ -1,14 +1,11 @@
 // Muestra los cambios pendientes (todavía sin sincronizar) encima de los datos guardados en el dispositivo.
 // Es puro: recibe datos y operaciones, y devuelve datos nuevos. No toca la red ni el navegador.
 
+import { defaultDueDate } from "../lib/businessDate.js";
+
 const num = (v) => (v === null || v === undefined || v === "" ? null : Number(v));
 const round2 = (n) => Math.round(n * 100) / 100;
 
-function addDays(iso, days) {
-  const d = new Date(iso);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 const mark = (row, op) => ({ ...row, _sync: op.status === "conflict" ? "conflict" : "pending" });
 
@@ -59,7 +56,7 @@ export function applyPending(data, ops) {
           kind: fiado ? "fiado" : "pago",
           amount: Number(p.amount),
           description: p.description ?? null,
-          due_date: fiado ? p.due_date || addDays(op.occurred_at, days) : null,
+          due_date: fiado ? p.due_date || defaultDueDate(op.occurred_at, days) : null,
           created_at: op.occurred_at,
           _sync: op.status === "conflict" ? "conflict" : "pending",
         });
@@ -83,7 +80,7 @@ export function applyPending(data, ops) {
           kind: "fiado",
           amount: round2(total),
           description: p.note || parts.join(", "),
-          due_date: p.due_date || addDays(op.occurred_at, days),
+          due_date: p.due_date || defaultDueDate(op.occurred_at, days),
           created_at: op.occurred_at,
           _sync: "pending",
         });

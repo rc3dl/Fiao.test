@@ -6,7 +6,7 @@ FIA'O is a web app for small shops in Panama that sell on credit (*fiado*). It r
 
 It is a student project, built to be free to run: the whole stack below works on free plans.
 
-> The interface is currently in English. Amounts are shown in balboas (`B/.`) and dates use the Panama time zone.
+> The interface is available in Spanish (default) and English. Amounts are shown in balboas (`B/.`) and dates use the Panama time zone.
 
 ---
 
@@ -90,8 +90,8 @@ There is no custom server: the browser talks directly to Supabase, and Row Level
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/rc3dl/Fia-O.git
-cd Fia-O
+git clone https://github.com/rc3dl/Fiao.test.git
+cd Fiao.test
 npm install
 ```
 
@@ -140,7 +140,9 @@ Create a new project at [supabase.com](https://supabase.com). In **Project Setti
 
 ### 2. Create the database
 
-Open **SQL Editor → New query**, paste the whole content of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**. It creates all tables, the security policies, and the database rules (see [Database overview](#database-overview)).
+> **Warning:** pasting the whole `schema.sql` is only for a **new, empty** project. For a database that already exists (production), do not re-run it: compare the real schema first and apply only the reviewed, numbered files in [`supabase/migrations/`](supabase/migrations/) (each one states its impact and is applied once, after approval).
+
+For a new project, open **SQL Editor → New query**, paste the whole content of [`supabase/schema.sql`](supabase/schema.sql) and press **Run**. It creates all tables, the security policies, and the database rules (see [Database overview](#database-overview)).
 
 ### 3. Configure authentication
 
@@ -200,14 +202,14 @@ Sign up with a real email address, enter the 6-digit code, complete the Setup sc
 | `VITE_ENABLE_GOOGLE` | No | `true` shows the Google sign-in button (web and Android app). Default `false`. |
 | `VITE_APP_URL` | No | Public address of the web (for example `https://YOUR-USER.github.io/Fia-O`). The Android app uses it for links that open outside the app, such as password reset. |
 | `VITE_UPDATES_URL` | No | Address of the Vercel deployment that serves `/api/version` (Android app updates). If empty, the app reads the `app_releases` table in Supabase directly. |
-| `VITE_BASE` | No | Overrides the publishing path. By default it is `/` locally and in Vercel, and `/Fia-O/` in GitHub Pages. |
+| `VITE_BASE` | No | Overrides the publishing path. By default it is `/` locally and in Vercel, and `/<repository-name>/` in GitHub Pages (taken from `GITHUB_REPOSITORY`; use `VITE_BASE` for a custom domain). |
 
 Vite only exposes variables that start with `VITE_`. They are read when the dev server or the build starts, so restart after changing them. `.env.example` lists all of them.
 
 | Environment | Where the variables come from | Build command |
 |---|---|---|
 | Local (`npm run dev`) | `.env.local` | `npm run dev` |
-| GitHub Pages | Repository secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the workflow also sets `VITE_ENABLE_GOOGLE`) | automatic on every push to `main` |
+| GitHub Pages | Repository secrets `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the workflow sets `VITE_ENABLE_GOOGLE` from the repository variable of the same name, `true` if not defined) | automatic on every push to `main` |
 | Android app | `.env.local` | `npm run android` |
 
 GitHub Pages builds and Android builds stop with a clear message if the two Supabase variables are missing, so a broken login is never published.
@@ -239,11 +241,11 @@ After adding or updating Capacitor plugins, run `npm run android` again.
 The web is not affected: everything below only runs when `IS_NATIVE` is true. Code: `src/offline/` (engine, local storage, overlay), `src/native/SyncStatus.jsx` (status and review panel).
 
 - **Offline reading.** After the first sign-in the app keeps a local copy of customers, products, credits and settings (IndexedDB, separated by user). Without internet the screens read that copy. Signing in again offline uses the session already stored on the phone.
-- **Offline writing.** Every create, edit and archive goes into a local queue first and is sent when there is a connection (in order, with automatic retries, without duplicates: each operation has its own id). The queue survives closing the app and rebooting.
+- **Offline writing.** Every create, edit and archive goes into a local queue first and is sent when there is a connection (in order, with automatic retries; each operation has its own id, and credit sales from inventory carry an idempotency key once `supabase/migrations/001_idempotent_fiado_sale.sql` is applied). The queue survives closing the app and rebooting.
 - **Status.** A small pill at the top-left shows *offline*, *syncing*, *changes to review* or *update available*. Tapping it (or **More → Sync and updates**) opens the panel: connection, last sync, pending changes, history and updates. Records not yet in the cloud show a *Pending* / *Review* tag.
 - **Conflicts and rejections.** If a customer or product was changed on another device after you edited it offline, nothing is overwritten: the change waits in the panel and you choose *Keep server version* or *Use my version*. If a credit rule refuses a queued change (limit, payment higher than the debt, stock), it is kept for review with the reason. Edits made while online are applied directly (last write wins).
 - **Central history.** Run section 14 of `supabase/schema.sql` once. It adds `audit_log` (who, what, when, from which device, old and new values, sync time; it cannot be edited or deleted from the app), a version stamp (`updated_at`) on customers and products, and the function `apply_sync_op`, which applies each change, detects duplicates and conflicts, and writes the history in one step, with Row Level Security still in force. Without section 14 the app keeps working with direct writes (no central history, no conflict detection).
-- **Security.** Each user's local data is stored under their own id; signing out deletes the local copy (unsent changes are kept for that same user). The Android app sandbox protects the files from other apps; extra encryption at rest would need the Android Keystore (a future step).
+- **Security.** Each user's local data is stored under their own id; signing out deletes the local copy of the data, but every unresolved change — pending, conflicting or rejected — is kept for that same user until it is resolved. The Android app sandbox protects the files from other apps; extra encryption at rest would need the Android Keystore (a future step).
 - **Tests.** `npm test` runs the automatic tests of the sync engine, the pending-changes layer, the version check and the Vercel functions.
 
 ## Updating the Android app
@@ -255,7 +257,7 @@ The web is not affected: everything below only runs when `IS_NATIVE` is true. Co
    `POST https://YOUR-PROJECT.vercel.app/api/release` with header `Authorization: Bearer RELEASE_ADMIN_TOKEN` and a JSON body `{ "version_name": "1.0.1", "version_code": 10001, "apk_url": "https://...", "notes_es": "...", "notes_en": "...", "mandatory": false }`.
 5. Vercel environment variables (server only, never `VITE_`): `SUPABASE_URL`, `SUPABASE_ANON_KEY` (for `/api/version`), `SUPABASE_SERVICE_ROLE_KEY` and `RELEASE_ADMIN_TOKEN` (for `/api/release`). In the app set `VITE_UPDATES_URL` to the Vercel address.
 
-The app checks for a new version when it opens and every few hours. An optional update shows the release notes with *Later*; a mandatory one blocks the app until it is installed. *Download and install* hands the APK to Android's downloader: Android asks once for permission to install apps from that source. The installation keeps all data. The app cannot show download progress (a native plugin would be needed).
+The app checks for a new version when it opens and every few hours. An optional update shows the release notes with *Later*; a mandatory one blocks the app until it is installed. *Download and install* tries to hand the APK to Android's downloader (this still has to be verified on a real device): Android asks once for permission to install apps from that source. The installation keeps all data. The app cannot show download progress (a native plugin would be needed).
 
 **Tutorial.** It opens by itself only the first time an account signs in. That is remembered in the account (Supabase Auth user metadata, no table change) and on the device, so it does not come back on another phone or after reinstalling.
 
@@ -387,8 +389,8 @@ Every table has Row Level Security: a merchant only reads and changes rows where
 
 ## Known limitations
 
-- The interface is only in English.
-- There is no offline mode: an internet connection is required.
+- The web version needs an internet connection. The Android app has limited offline support (reading a local copy and a queue of changes, see *Offline mode* above); changes saved offline are **not confirmed** until they sync and can still be rejected (limit, stock, payment higher than the debt).
+- If the phone cannot provide durable storage (IndexedDB), the app does not work offline: it warns and sends changes straight to the server.
 - Payment reminders are not sent automatically. FIA'O prepares the WhatsApp message and opens WhatsApp with it ready; the merchant presses send. (Fully automatic messages require the paid WhatsApp Business API.)
 - Customers do not have accounts and cannot pay inside the app; the merchant records the payment.
 - Product images are added by link; uploading photos is not available yet.
