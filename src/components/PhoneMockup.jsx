@@ -7,7 +7,7 @@ export default function PhoneMockup() {
   const debts = [
     { initial: "J", name: "Jonn Perez", amount: "B/. 45.00" },
     { initial: "A", name: "Ana Torres", amount: "B/. 120.00" },
-    { initial: "P", name: "Pedro Buiz", amount: "$32.50" },
+    { initial: "P", name: "Pedro Buiz", amount: "B/. 32.50" },
     { initial: "P", name: "Pedro Puiz", amount: "$32.50" },
   ];
 
