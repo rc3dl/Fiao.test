@@ -23,6 +23,7 @@ const fail = (error) => {
 };
 
 const PROFILE_FIELDS = ["full_name", "store_name", "phone", "address", "ruc"];
+const OAUTH_PROVIDERS = new Set(["google", "apple", "facebook", "azure"]);
 
 export const base44 = {
   auth: {
@@ -206,8 +207,9 @@ export const base44 = {
 
     async loginWithProvider(provider, returnTo = "/dashboard") {
       assertReady();
+      if (!OAUTH_PROVIDERS.has(provider)) throw new Error("Este método de inicio de sesión no está disponible.");
       if (IS_NATIVE) {
-        // Android: Google no permite iniciar sesión dentro de un WebView. Se abre el navegador del sistema
+        // Android: los proveedores OAuth se abren en el navegador del sistema (no dentro del WebView)
         // y Supabase devuelve a la app por NATIVE_REDIRECT (lo recibe src/native/native.js).
         const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
