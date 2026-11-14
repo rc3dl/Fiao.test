@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   BarChart3,
-  BookOpen,
   Bell,
   CheckCircle2,
   ChevronDown,
