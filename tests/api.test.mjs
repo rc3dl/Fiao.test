@@ -50,7 +50,7 @@ test("release: exige el token de administrador", async () => {
   process.env.RELEASE_ADMIN_TOKEN = "secreto-largo";
   let called = false;
   globalThis.fetch = async () => { called = true; return { ok: true, json: async () => [] }; };
-  const body = { version_name: "1.0.1", version_code: 10001, apk_url: "https://a/b.apk" };
+  const body = { version_name: "1.0.1", version_code: 10001, apk_url: "https://x.supabase.co/storage/v1/object/public/app-releases/test.apk" };
 
   const noToken = fakeRes();
   await release({ method: "POST", headers: {}, body }, noToken);
@@ -74,10 +74,17 @@ test("release: valida los datos y guarda con la llave del servidor", async () =>
   await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: "abc", apk_url: "http://inseguro" } }, bad);
   assert.equal(bad.statusCode, 400);
 
+  let sentUntrusted = false;
+  globalThis.fetch = async () => { sentUntrusted = true; return { ok: true, status: 201, json: async () => [] }; };
+  const untrusted = fakeRes();
+  await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: 10001, apk_url: "https://attacker.example/app.apk" } }, untrusted);
+  assert.equal(untrusted.statusCode, 400);
+  assert.equal(sentUntrusted, false, "does not save a release from another host");
+
   let sent;
   globalThis.fetch = async (url, init) => { sent = { url, init }; return { ok: true, status: 201, json: async () => [{ id: "r1", version_code: 10001 }] }; };
   const ok = fakeRes();
-  await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: 10001, apk_url: "https://a/b.apk", mandatory: true, notes_es: "Mejoras" } }, ok);
+  await release({ method: "POST", headers: auth, body: { version_name: "1.0.1", version_code: 10001, apk_url: "https://x.supabase.co/storage/v1/object/public/app-releases/test.apk", mandatory: true, notes_es: "Mejoras" } }, ok);
   assert.equal(ok.statusCode, 201);
   const saved = JSON.parse(sent.init.body);
   assert.equal(saved.version_code, 10001);
@@ -96,7 +103,7 @@ async function postRelease(body, { rawBody } = {}) {
   await release({ method: "POST", headers: { authorization: "Bearer secreto-largo" }, body: rawBody ?? body }, res);
   return { res, called };
 }
-const good = { version_name: "1.0.1", version_code: 10001, apk_url: "https://a.supabase.co/b.apk" };
+const good = { version_name: "1.0.1", version_code: 10001, apk_url: "https://x.supabase.co/storage/v1/object/public/app-releases/good.apk" };
 
 test("release: JSON mal formado, vacío o que no es un objeto → 400 sin tocar Supabase", async () => {
   for (const raw of ["{no es json", "[1,2]", "null", '"texto"']) {
