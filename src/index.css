@@ -590,3 +590,13 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
 .dark .auth-card {
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
 }
+
+
+/* La autenticación web reutiliza la paleta original de FIA'O en ambos temas. */
+.auth-sidebar {
+  background-color: var(--navbar-bg) !important;
+  transition: background-color 180ms ease;
+}
+.auth-glow-red {
+  background-color: color-mix(in srgb, var(--navbar-bg) 10%, transparent);
+}
