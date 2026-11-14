@@ -417,3 +417,7 @@ Every table has Row Level Security: a merchant only reads and changes rows where
 
 No license has been chosen yet. Until one is added, all rights are reserved by the author.
 volver a actualizar la web
+
+## Project status and database compatibility
+
+`Fiao.test` is the primary repository and replaces the previous `Fia-O` codebase for continued development. Before deploying it against an existing Supabase project, review the migration order, the old-client incompatibility, and the Android release setup in [`docs/ESTADO_Y_COMPATIBILIDAD_SUPABASE.md`](docs/ESTADO_Y_COMPATIBILIDAD_SUPABASE.md). Do not run the complete `supabase/schema.sql` against a database that already contains data; use reviewed, pending migrations only.
