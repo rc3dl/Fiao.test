@@ -5,7 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 
-export default function AuthLayout({ icon: Icon, title, subtitle, footer, children }) {
+export default function AuthLayout({ icon: Icon, title, subtitle, footer = null, children }) {
   const { t, language, toggleLanguage } = useLanguage();
   const { pathname } = useLocation();
   const es = language === "es";
