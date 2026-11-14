@@ -125,7 +125,7 @@ export default function Navbar() {
                   {es ? "ESP" : "ENG"}
                 </button>
                 <Link to="/login" className="hidden rounded-full px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/10 sm:inline-flex sm:text-sm">
-                  {es ? "Entrar" : "Log in"}
+                  {es ? "Iniciar sesión" : "Sign in"}
                 </Link>
                 <Link to="/register" className="hidden rounded-full px-4 py-2 text-xs font-bold sm:inline-flex sm:text-sm" style={{ backgroundColor: "#F9D103", color: "#2D2926" }}>
                   {es ? "Crear cuenta" : "Sign up"}
@@ -186,7 +186,7 @@ export default function Navbar() {
             ))}
             <div className="mt-1 grid grid-cols-2 gap-2 border-t border-white/15 pt-3">
               <Link to="/login" onClick={() => setOpen(false)} className="rounded-full border border-white/30 px-4 py-2.5 text-center text-sm font-semibold text-white">
-                {es ? "Iniciar sesión" : "Log in"}
+                {es ? "Iniciar sesión" : "Sign in"}
               </Link>
               <Link to="/register" onClick={() => setOpen(false)} className="rounded-full px-4 py-2.5 text-center text-sm font-bold" style={{ backgroundColor: "#F9D103", color: "#2D2926" }}>
                 {es ? "Crear cuenta" : "Sign up"}

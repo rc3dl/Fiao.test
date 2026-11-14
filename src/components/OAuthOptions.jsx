@@ -11,20 +11,36 @@ const PROVIDERS = [
 ];
 
 function ProviderMark({ provider }) {
-  if (provider.id === "google") return <GoogleIcon className="h-5 w-5" />;
+  if (provider.id === "google") return <GoogleIcon className="h-5 w-5 shrink-0" />;
 
-  const color =
-    provider.id === "facebook" ? "#1877F2" :
-    provider.id === "apple" ? "#242424" :
-    "#5B6472";
+  if (provider.id === "apple") {
+    return (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          fill="currentColor"
+          d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.08-.35C2.67 14.3 3.5 6.4 9.1 6.1c1.35.07 2.3.75 3.1.8.99-.2 1.94-.9 3.02-.83 1.3.1 2.28.62 2.9 1.55-2.65 1.59-2.22 5.07.28 6.05-.48 1.27-1.1 2.51-2.35 3.62zM12.03 6c-.15-2.25 1.67-4.11 3.77-4.3.29 2.6-2.36 4.56-3.77 4.3z"
+        />
+      </svg>
+    );
+  }
+
+  if (provider.id === "azure") {
+    return (
+      <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#F25022" d="M1 1h10v10H1z" />
+        <path fill="#7FBA00" d="M13 1h10v10H13z" />
+        <path fill="#00A4EF" d="M1 13h10v10H1z" />
+        <path fill="#FFB900" d="M13 13h10v10H13z" />
+      </svg>
+    );
+  }
 
   return (
     <span
       aria-hidden="true"
-      className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-base font-extrabold"
-      style={{ color }}
+      className="flex h-5 w-5 shrink-0 items-center justify-center text-[21px] font-bold leading-none text-[#1877F2]"
     >
-      {provider.mark}
+      f
     </span>
   );
 }
@@ -51,8 +67,8 @@ export default function OAuthOptions({ onSelect, loadingProvider = null }) {
               disabled={disabled}
               aria-label={actionLabel + " " + provider.name}
               aria-busy={busy}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
-              style={{ borderColor: "var(--border)" }}
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border bg-white px-3 py-2.5 text-sm font-semibold text-[#2D2926] opacity-100 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-wait disabled:opacity-60"
+              style={{ borderColor: "#D8DDE5", color: "#2D2926", backgroundColor: "#FFFFFF" }}
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ProviderMark provider={provider} />}
               <span>{provider.name}</span>
