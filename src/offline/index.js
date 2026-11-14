@@ -136,13 +136,15 @@ async function defaultDueDays() {
   return Number(data?.default_due_days ?? 15);
 }
 
-// Venta fiada: la clave de idempotencia es el record_id de la operación (el mismo en cada reintento).
-// Si la migración 001 aún no está en la base, se usa la firma antigua (SIN idempotencia) hasta que se aplique.
+// Venta fiada: todo reintento conserva el mismo record_id como clave de idempotencia.
+// Si la función segura no existe, se rechaza la operación; nunca se usa la firma antigua sin clave.
 async function callFiadoSale(op, p) {
   const args = { p_client_id: p.client_id, p_items: p.items, p_due_date: p.due_date || null, p_note: p.note || null };
-  const res = await supabase.rpc("register_fiado_sale", { ...args, p_request_id: op.record_id, p_occurred_at: op.occurred_at });
-  if (res.error && MISSING_FUNCTION.test(`${res.error.code} ${res.error.message}`)) return supabase.rpc("register_fiado_sale", args);
-  return res;
+  return supabase.rpc("register_fiado_sale", {
+    ...args,
+    p_request_id: op.record_id,
+    p_occurred_at: op.occurred_at,
+  });
 }
 
 // ---------- copia local de los datos ----------
@@ -368,18 +370,33 @@ export function stopOffline() {
   publish(EMPTY);
 }
 
-// Al cerrar sesión: se borra la copia de datos del dispositivo. Los cambios sin enviar se conservan
-// para ese mismo usuario (se enviarán la próxima vez que entre).
-export async function wipeOnLogout() {
-  const c = current;
-  if (!c) return;
-  // Se conserva toda operación sin resolver (pendientes, conflictos y rechazos); solo se borra la copia de datos.
-  const unresolved = c.engine.hasUnresolved();
-  stopOffline();
+// Al cerrar sesión: se borra la copia de datos del dispositivo. Las operaciones sin resolver
+// se conservan para esa misma cuenta, incluso si MobileShell ya detuvo el motor.
+export async function wipeOnLogout(userId = current?.userId) {
+  const c = current?.userId === userId ? current : null;
+  if (!userId) return;
+
+  let keepOps = c?.engine.hasUnresolved() ?? false;
+  if (!c) {
+    try {
+      const storage = createIdbStorage(userId);
+      const ops = await storage.list();
+      keepOps = ops.some((op) => ["pending", "syncing", "conflict", "rejected"].includes(op.status));
+    } catch {
+      // Si no se puede inspeccionar la cola, se conservan sus registros por seguridad.
+      keepOps = true;
+    }
+  }
+
+  if (c) stopOffline();
   try {
-    await wipeMirror(c.userId, { keepOps: unresolved });
+    await wipeMirror(userId, { keepOps });
   } catch {
     /* se ignora */
   }
-  localStorage.removeItem(`fiao:me:${c.userId}`);
+  try {
+    localStorage.removeItem(`fiao:me:${userId}`);
+  } catch {
+    /* se ignora */
+  }
 }
