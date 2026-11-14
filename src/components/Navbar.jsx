@@ -24,7 +24,6 @@ const PUBLIC_ITEMS = [
   { target: "#funciones", es: "Funciones", en: "Features" },
   { target: "#android", es: "Android", en: "Android" },
   { target: "#preguntas", es: "Preguntas", en: "FAQ" },
-  { target: "/contact", es: "Contacto", en: "Contact" },
 ];
 
 function Logo() {
