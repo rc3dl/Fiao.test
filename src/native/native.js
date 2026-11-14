@@ -43,7 +43,7 @@ export async function initNative() {
     if (!handled) App.exitApp();
   });
 
-  // Regreso desde el navegador tras iniciar sesión con Google.
+  // Regreso desde el navegador tras iniciar sesión con un proveedor OAuth.
   App.addListener("appUrlOpen", ({ url }) => {
     if (url) finishNativeOAuth(url).catch(() => authError("No se pudo completar el inicio de sesión."));
   });
