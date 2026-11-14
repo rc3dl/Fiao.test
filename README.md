@@ -352,6 +352,7 @@ The full definition is in [`supabase/schema.sql`](supabase/schema.sql).
 | `credit_entries` | Every credit (`fiado`) and every payment (`pago`). Insert-only. |
 | `credit_entry_items` | Which products were taken in each credit sale, with the price at that moment. |
 | `reminders` | Log of payment reminders prepared for customers. |
+| `audit_log` | Server-side history of offline operations and their applied, conflicting or rejected status (created by migration 003). |
 | `contact_messages` | Messages sent from the Contact page. |
 
 Database rules (triggers and functions):
@@ -396,7 +397,7 @@ Every table has Row Level Security: a merchant only reads and changes rows where
 - Product images are added by link; uploading photos is not available yet.
 - The *Digital Catalog* card in Products is a placeholder for a future feature.
 - Notifications appear only inside the app (the bell); there are no push notifications or emails.
-- There is no automated test suite yet.
+- `npm test` ejecuta las pruebas automatizadas del motor offline, las reglas de negocio, las rutas de API y los contratos de seguridad.
 
 ## Notes for contributors
 
