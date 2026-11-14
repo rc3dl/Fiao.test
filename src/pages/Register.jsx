@@ -51,11 +51,9 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
-      const result = await base44.auth.verifyOtp({ email, otpCode });
-      if (result?.access_token) {
-        base44.auth.setToken(result.access_token);
-      }
-     window.location.href = withBase(safeReturnTo());
+      await base44.auth.verifyOtp({ email, otpCode });
+      // verifyOtp() ya establece la sesión de Supabase.
+      window.location.href = withBase(safeReturnTo());
     } catch (err) {
       setError(err.message || "Invalid verification code");
     } finally {
