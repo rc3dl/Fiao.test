@@ -29,7 +29,7 @@ export default function Home() {
   const es = language === "es";
 
   // The APK button only appears when an actual published release exists in Supabase.
-  const { data: androidRelease, isPending: releaseLoading, isError: releaseError } = useQuery({
+  const { data: androidRelease, isLoading: releaseLoading, isError: releaseError } = useQuery({
     queryKey: ["public-android-release"],
     enabled: SUPABASE_CONFIGURED,
     staleTime: 5 * 60 * 1000,
