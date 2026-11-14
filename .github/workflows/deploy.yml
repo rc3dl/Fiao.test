@@ -11,7 +11,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  # PR checks must never cancel a deployment from main (or another PR).
+  group: pages-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -44,8 +45,9 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # The PR build is static; placeholders let fork PRs build without repository secrets.
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://build-placeholder.supabase.co' }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'build-placeholder-anon-key' }}
           VITE_ENABLE_GOOGLE: ${{ vars.VITE_ENABLE_GOOGLE || 'true' }}
 
   build:
