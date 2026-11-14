@@ -91,6 +91,7 @@ test("auth changes clear account-scoped query cache and profile writes use the o
   assert.match(offline, /lifecycleGeneration/);
   assert.match(offline, /if \(isStale\(\)\) return/);
   assert.match(authClient, /wipeOnLogout\(userId\)/);
+  assert.match(offline, /case "profile\\.update":[\\s\\S]*?upsert\\(\\{ id: op\\.record_id, \.\.\.p \\}\)/);
 });
 
 test("profile cache merges offline setup fields without creating an unverified session", () => {
