@@ -7,21 +7,22 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
-import GoogleIcon from "@/components/GoogleIcon";
+import OAuthOptions from "@/components/OAuthOptions";
 import { toast } from "@/components/ui/use-toast";
 import { safeReturnTo } from "@/lib/authReturnTo";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 
-import { ENABLE_GOOGLE } from "@/lib/env";
 import PasswordInput from "@/components/PasswordInput";
+import { IS_NATIVE } from "@/native/useIsNative";
 export default function Register() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOAuthLoading] = useState(null);
   const [showOtp, setShowOtp] = useState(false);
   const [otpCode, setOtpCode] = useState("");
 
@@ -74,11 +75,24 @@ export default function Register() {
     }
   };
 
-  const handleGoogle = async () => {
+  const handleOAuth = async (provider) => {
+    setError("");
+    setOAuthLoading(provider);
+    const names = { google: "Google", apple: "Apple", facebook: "Facebook", azure: "Microsoft" };
     try {
-      await base44.auth.loginWithProvider("google", safeReturnTo());
+      await base44.auth.loginWithProvider(provider, safeReturnTo());
     } catch (err) {
-      setError(err?.message || t("Could not start Google sign-in. Try again."));
+      const message = String(err?.message || "");
+      if (/unsupported provider|provider.*(not enabled|disabled)/i.test(message)) {
+        const name = names[provider] || provider;
+        setError(language === "es"
+          ? "El acceso con " + name + " aún no está habilitado. Actívalo en Supabase, en Authentication > Sign In / Providers."
+          : "Sign-in with " + name + " is not enabled yet. Enable it in Supabase under Authentication > Sign In / Providers.");
+      } else {
+        setError(message || (language === "es" ? "No se pudo iniciar el acceso. Inténtalo de nuevo." : "Could not start sign-in. Try again."));
+      }
+    } finally {
+      setOAuthLoading(null);
     }
   };
 
@@ -153,23 +167,14 @@ export default function Register() {
         </>
       }
     >
-     {ENABLE_GOOGLE && (
-  <Button
-    variant="outline"
-    className="w-full h-12 text-sm font-medium mb-6"
-    onClick={handleGoogle}
-  >
-    <GoogleIcon className="w-5 h-5 mr-2" />
-    {t("Continue with Google")}
-  </Button>
-)}
+      <OAuthOptions onSelect={handleOAuth} loadingProvider={oauthLoading || (loading ? "email" : null)} />
 
       <div className="relative mb-6">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-3 text-muted-foreground">{t("or")}</span>
+          <span className="bg-card px-3 text-muted-foreground">{language === "es" ? "o con tu correo" : "or with email"}</span>
         </div>
       </div>
 
@@ -188,7 +193,7 @@ export default function Register() {
               id="email"
               type="email"
               autoComplete="email"
-              autoFocus
+              autoFocus={!IS_NATIVE}
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -229,7 +234,7 @@ export default function Register() {
             />
           </div>
         </div>
-        <Button type="submit" className="w-full h-12 font-medium" disabled={loading}>
+        <Button type="submit" className="w-full h-12 font-medium" disabled={loading || Boolean(oauthLoading)}>
           {loading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />

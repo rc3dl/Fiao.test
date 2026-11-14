@@ -8,8 +8,8 @@ import { parseNativeAuthReturn } from "@/lib/oauthReturn";
 
 const authError = (message) => window.dispatchEvent(new CustomEvent("fiao:auth-error", { detail: message }));
 
-// Google devuelve a la app con com.fiao.panama://auth#access_token=...&refresh_token=...
-async function finishGoogleLogin(url) {
+// El proveedor OAuth devuelve a la app con com.fiao.panama://auth#access_token=...&refresh_token=...
+async function finishNativeOAuth(url) {
   const result = parseNativeAuthReturn(url, NATIVE_REDIRECT);
   if (result.kind === "ignore") return; // enlace que no es el de retorno: se descarta sin tocar la sesión
   if (result.kind === "error") return authError(result.message);
@@ -43,8 +43,8 @@ export async function initNative() {
     if (!handled) App.exitApp();
   });
 
-  // Regreso desde el navegador tras iniciar sesión con Google.
+  // Regreso desde el navegador tras iniciar sesión con un proveedor OAuth.
   App.addListener("appUrlOpen", ({ url }) => {
-    if (url) finishGoogleLogin(url).catch(() => authError("No se pudo completar el inicio de sesión con Google."));
+    if (url) finishNativeOAuth(url).catch(() => authError("No se pudo completar el inicio de sesión."));
   });
 }

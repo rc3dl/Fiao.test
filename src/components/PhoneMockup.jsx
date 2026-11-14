@@ -5,9 +5,9 @@ import { withBase } from "@/lib/withBase";
 export default function PhoneMockup() {
     const { t } = useLanguage();
   const debts = [
-    { initial: "J", name: "Jonn Perez", amount: "$45.00" },
-    { initial: "A", name: "Ana Torres", amount: "$120.00" },
-    { initial: "P", name: "Pedro Buiz", amount: "$32.50" },
+    { initial: "J", name: "Jonn Perez", amount: "B/. 45.00" },
+    { initial: "A", name: "Ana Torres", amount: "B/. 120.00" },
+    { initial: "P", name: "Pedro Buiz", amount: "B/. 32.50" },
     { initial: "P", name: "Pedro Puiz", amount: "$32.50" },
   ];
 
@@ -40,7 +40,7 @@ export default function PhoneMockup() {
             </div>
             <p className="text-white text-sm mt-3 font-medium">{t("Good morning, John 👋")}</p>
             <p className="text-white/70 text-[11px]">{t("Total balance to collect")}</p>
-            <p className="text-white font-bold text-2xl mt-0.5" style={{ fontFamily: "Poppins" }}>$1,240.50</p>
+            <p className="text-white font-bold text-2xl mt-0.5" style={{ fontFamily: "Poppins" }}>B/. 1,240.50</p>
           </div>
 
           {/* Debt list */}
