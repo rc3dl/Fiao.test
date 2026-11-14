@@ -1,5 +1,9 @@
 import { createContext, useState, useContext, useEffect } from 'react';
-const ThemeContext = createContext();
+
+/** @typedef {{ theme: string, toggleTheme: () => void, isDark: boolean }} ThemeContextValue */
+
+/** @type {import('react').Context<ThemeContextValue | null>} */
+const ThemeContext = createContext(null);
 
 export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState('light');

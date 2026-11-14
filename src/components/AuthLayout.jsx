@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
@@ -6,6 +5,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 
+/**
+ * @param {{
+ *   icon: React.ElementType,
+ *   title: React.ReactNode,
+ *   subtitle?: React.ReactNode,
+ *   footer?: React.ReactNode,
+ *   children: React.ReactNode
+ * }} props
+ */
 export default function AuthLayout({
   icon: Icon,
   title,
@@ -49,7 +57,6 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="w-full max-w-md">
-
         {/* Volver al inicio */}
         <div className="mb-5 w-full flex justify-start mt-4">
           <Link
