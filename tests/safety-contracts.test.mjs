@@ -48,7 +48,8 @@ test("SQL serializes duplicate sync operations and requires an idempotency key f
   ]);
   assert.match(schema, /perform pg_advisory_xact_lock\(hashtext\(v_owner::text\), hashtext\(v_id::text\)\)/);
   assert.match(schema, /An idempotency key is required/);
-  assert.doesNotMatch(schema, /^as \$(?!\$)|^\$;$/m);
+  assert.doesNotMatch(schema, /^as \$(?!\$)(?![A-Za-z_][A-Za-z0-9_]*\$)|^\$;$/m);
+  assert.match(schema, /as \$register_fiado_sale\$[\s\S]*?\$register_fiado_sale\$;/);
   assert.doesNotMatch(migration003, /^as \$(?!\$)|^\$;$/m);
   assert.match(migration001, /An idempotency key is required/);
   assert.match(migration003, /perform pg_advisory_xact_lock\(hashtext\(v_owner::text\), hashtext\(v_id::text\)\)/);
