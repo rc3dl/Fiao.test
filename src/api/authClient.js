@@ -5,6 +5,7 @@ import { isNetworkError, readStoredSession } from "@/lib/network";
 import { withBase } from "@/lib/withBase";
 import { IS_NATIVE } from "@/native/useIsNative";
 import { mutate } from "@/offline";
+import { mergeProfileCache } from "@/lib/profileCache";
 
 // Solo en la app Android: mensajes claros cuando falla la conexión con Supabase.
 const NO_CONFIG =
@@ -96,7 +97,7 @@ export const base44 = {
         updated_at: new Date().toISOString(),
       };
 
-      return mutate(
+      const result = await mutate(
         {
           type: "profile.update",
           table: "profiles",
@@ -109,6 +110,8 @@ export const base44 = {
           fail(error);
         }
       );
+      if (IS_NATIVE) mergeProfileCache(localStorage, user.id, values);
+      return result;
     },
 
     async loginViaEmailPassword(email, password) {
