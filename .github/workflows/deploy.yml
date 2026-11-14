@@ -30,6 +30,24 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
 
+  # Comprueba el build de cada PR sin publicar ni desplegar GitHub Pages.
+  build_check:
+    needs: verify
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_ENABLE_GOOGLE: ${{ vars.VITE_ENABLE_GOOGLE || 'true' }}
+
   build:
     needs: verify
     if: github.event_name != 'pull_request'
