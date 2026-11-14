@@ -293,32 +293,44 @@ export async function syncNow() {
   }
 }
 
-let starting = null; // { userId, promise }
+let starting = null; // { userId, generation, promise }
+let lifecycleGeneration = 0;
 
-// Arranca la copia local y la sincronización del usuario. Si ya está en marcha (o arrancando), no hace nada.
+// Detiene únicamente el motor activo. La invalidación de arranques pendientes se controla arriba.
+function stopCurrentOffline() {
+  if (!current) return;
+  clearInterval(current.timer);
+  current.cleanup();
+  current = null;
+  publish(EMPTY);
+}
+
+// Arranca la copia local y la sincronización. Un arranque antiguo nunca puede reactivar una cuenta ya cerrada.
 export function startOffline(userId) {
   if (!IS_NATIVE || !userId || current?.userId === userId) return Promise.resolve();
   if (starting?.userId === userId) return starting.promise;
-  const promise = doStart(userId).finally(() => {
+
+  const generation = ++lifecycleGeneration;
+  const promise = doStart(userId, generation).finally(() => {
     if (starting?.promise === promise) starting = null;
   });
-  starting = { userId, promise };
+  starting = { userId, generation, promise };
   return promise;
 }
 
-async function doStart(userId) {
-  stopOffline();
+async function doStart(userId, generation) {
+  stopCurrentOffline();
+  const isStale = () => generation !== lifecycleGeneration;
 
   let storage;
   try {
     storage = createIdbStorage(userId);
     await storage.list();
   } catch {
-    // Sin almacenamiento duradero NO se trabaja sin conexión: una cola en memoria se perdería al cerrar la app.
-    // Las escrituras van directo al servidor (y fallan de forma visible si no hay internet) y la interfaz avisa.
-    publish({ ...EMPTY, storageUnavailable: true });
+    if (!isStale()) publish({ ...EMPTY, storageUnavailable: true });
     return;
   }
+  if (isStale()) return;
 
   const engine = createEngine({
     storage,
@@ -328,17 +340,26 @@ async function doStart(userId) {
     deviceId: deviceId(),
     isOnline: () => navigator.onLine !== false,
     onApplied: async () => {
+      if (current?.engine !== engine) return;
       await pullAll();
       queryClientInstance.invalidateQueries();
     },
   });
   const mirrorAt = await storage.getMeta("mirrorAt");
-  const onOnline = () => probe().then((ok) => ok && engine.setOnline(true));
-  const onOffline = () => engine.setOnline(false);
+  if (isStale()) return;
+
+  const onOnline = () => probe().then((ok) => ok && current?.engine === engine && engine.setOnline(true));
+  const onOffline = () => {
+    if (current?.engine === engine) engine.setOnline(false);
+  };
   window.addEventListener("online", onOnline);
   window.addEventListener("offline", onOffline);
 
-  const unsubscribe = engine.subscribe(() => publish({ ...engine.getSnapshot(), ready: true, pulledAt: current?.mirrorAt ?? mirrorAt }));
+  const unsubscribe = engine.subscribe(() => {
+    if (current?.engine === engine) {
+      publish({ ...engine.getSnapshot(), ready: true, pulledAt: current?.mirrorAt ?? mirrorAt });
+    }
+  });
   current = {
     userId,
     engine,
@@ -354,27 +375,33 @@ async function doStart(userId) {
   };
 
   await engine.load();
+  if (isStale() || current?.engine !== engine) return;
+
   publish({ ...engine.getSnapshot(), ready: Boolean(mirrorAt), pulledAt: mirrorAt });
-  queryClientInstance.invalidateQueries(); // las pantallas que cargaron antes ahora pueden usar la copia local
+  queryClientInstance.invalidateQueries();
   if (engine.isOnline()) {
     await engine.flush({ force: true });
-    pullAll();
+    if (current?.engine === engine) pullAll();
   }
 }
 
 export function stopOffline() {
-  if (!current) return;
-  clearInterval(current.timer);
-  current.cleanup();
-  current = null;
-  publish(EMPTY);
+  lifecycleGeneration += 1;
+  starting = null;
+  stopCurrentOffline();
+  if (!current) publish(EMPTY);
 }
 
 // Al cerrar sesión: se borra la copia de datos del dispositivo. Las operaciones sin resolver
 // se conservan para esa misma cuenta, incluso si MobileShell ya detuvo el motor.
-export async function wipeOnLogout(userId = current?.userId) {
-  const c = current?.userId === userId ? current : null;
+export async function wipeOnLogout(userId = current?.userId ?? starting?.userId) {
   if (!userId) return;
+  const c = current?.userId === userId ? current : null;
+
+  if (starting?.userId === userId) {
+    lifecycleGeneration += 1;
+    starting = null;
+  }
 
   let keepOps = c?.engine.hasUnresolved() ?? false;
   if (!c) {
@@ -388,7 +415,7 @@ export async function wipeOnLogout(userId = current?.userId) {
     }
   }
 
-  if (c) stopOffline();
+  if (c) stopCurrentOffline();
   try {
     await wipeMirror(userId, { keepOps });
   } catch {
