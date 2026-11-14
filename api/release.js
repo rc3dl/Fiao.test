@@ -9,6 +9,7 @@
 //   SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, RELEASE_ADMIN_TOKEN (una clave larga que tú inventas)
 
 import { timingSafeEqual } from "node:crypto";
+import { isTrustedReleaseUrl } from "../src/lib/trustedReleaseUrl.js";
 
 const same = (a, b) => {
   const x = Buffer.from(String(a));
@@ -17,8 +18,11 @@ const same = (a, b) => {
 };
 
 // Validación estricta: solo se aceptan los tipos exactos (nada de "false" como texto ni "10001abc").
-function validateRelease(b) {
+function validateRelease(b, supabaseUrl) {
   const problems = [];
+  if (typeof b.apk_url !== "string" || b.apk_url.length > 2048) {
+    problems.push("apk_url must be a URL up to 2048 characters");
+  }
   if (typeof b.version_name !== "string" || !/^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$/.test(b.version_name.trim()) || b.version_name.length > 40) {
     problems.push("version_name must be a version like 1.0.1");
   }
@@ -26,13 +30,9 @@ function validateRelease(b) {
   if (!Number.isSafeInteger(code) || code <= 0 || code > 2100000000) {
     problems.push("version_code must be a positive integer");
   }
-  let url = null;
-  try {
-    url = typeof b.apk_url === "string" && b.apk_url.length <= 2048 ? new URL(b.apk_url) : null;
-  } catch {
-    url = null;
+  if (!isTrustedReleaseUrl(b.apk_url, supabaseUrl)) {
+    problems.push("apk_url must be an HTTPS APK in this project's app-releases bucket");
   }
-  if (!url || url.protocol !== "https:" || url.username || url.password) problems.push("apk_url must be a valid https URL");
   for (const key of ["mandatory", "published"]) {
     if (key in b && typeof b[key] !== "boolean") problems.push(`${key} must be true or false (boolean)`);
   }
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
   }
   if (!b || typeof b !== "object" || Array.isArray(b)) return res.status(400).json({ error: "The body must be a JSON object" });
 
-  const problems = validateRelease(b);
+  const problems = validateRelease(b, SUPABASE_URL);
   if (problems.length) return res.status(400).json({ error: problems.join("; ") });
   const versionCode = Number(b.version_code);
 

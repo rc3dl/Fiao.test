@@ -77,6 +77,43 @@ create table if not exists public.products (
   unique (id, owner_id)
 );
 
+-- Prevent new fractional quantities for indivisible units. Legacy rows can still
+-- be edited in unrelated fields and corrected one quantity at a time.
+create or replace function public.enforce_whole_product_units()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if TG_OP = 'INSERT' then
+    if new.unit not in ('lb', 'kg', 'liter')
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Stock and minimum stock must be whole numbers for unit %.', new.unit;
+    end if;
+    return new;
+  end if;
+
+  if new.unit not in ('lb', 'kg', 'liter') then
+    if new.unit is distinct from old.unit
+       and (new.stock <> trunc(new.stock) or new.min_stock <> trunc(new.min_stock)) then
+      raise exception 'Correct stock and minimum stock before changing to whole units.';
+    end if;
+    if new.stock is distinct from old.stock and new.stock <> trunc(new.stock) then
+      raise exception 'Stock must be a whole number for unit %.', new.unit;
+    end if;
+    if new.min_stock is distinct from old.min_stock and new.min_stock <> trunc(new.min_stock) then
+      raise exception 'Minimum stock must be a whole number for unit %.', new.unit;
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists products_whole_units_guard on public.products;
+create trigger products_whole_units_guard
+  before insert or update of unit, stock, min_stock on public.products
+  for each row execute function public.enforce_whole_product_units();
+
 
 -- -----------------------------------------------------------------------------
 -- 4. CREDIT ENTRIES - every credit ("fiado") and every payment ("pago").
@@ -262,8 +299,21 @@ declare
   v_auto_block boolean;
   v_days integer;
   v_default_limit numeric(12,2);
+  v_archived boolean;
 begin
-  -- One entry at a time per customer (two simultaneous entries cannot skip the limit)
+  -- Lock the client row first. The archive trigger also runs while holding this row,
+  -- so a concurrent archive and credit cannot pass each other's balance checks.
+  select c.archived into v_archived
+    from public.clients c
+   where c.id = new.client_id
+     and c.owner_id = new.owner_id
+   for update;
+
+  if not found or coalesce(v_archived, true) then
+    raise exception 'Customer not found or already archived.';
+  end if;
+
+  -- Then serialize all credit/payment balance calculations for this customer.
   perform pg_advisory_xact_lock(hashtext(new.client_id::text));
 
   -- Current balance of the customer, not counting this entry
@@ -316,6 +366,49 @@ create trigger credit_entry_rules
   before insert on public.credit_entries
   for each row execute function public.check_credit_entry();
 
+// Prevent archiving a customer who still owes money. It uses the same per-customer
+// advisory lock as credit_entry_rules, so a concurrent fiado cannot slip between
+// the balance check and the archive update.
+create or replace function public.prevent_client_archive_with_balance()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+declare
+  v_balance numeric(12,2);
+begin
+  if new.archived and not old.archived then
+    -- Explicitly hold the client row before the shared balance lock.
+    perform 1
+      from public.clients c
+     where c.id = new.id and c.owner_id = new.owner_id
+       for update;
+    if not found then
+      raise exception 'Customer not found.';
+    end if;
+
+    perform pg_advisory_xact_lock(hashtext(new.id::text));
+
+    select coalesce(sum(case when e.kind = 'fiado' then e.amount else -e.amount end), 0)
+      into v_balance
+      from public.credit_entries e
+     where e.client_id = new.id
+       and e.owner_id = new.owner_id;
+
+    if v_balance > 0 then
+      raise exception 'Cannot archive a customer with an outstanding balance.';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists clients_prevent_archive_with_balance on public.clients;
+create trigger clients_prevent_archive_with_balance
+  before update of archived on public.clients
+  for each row execute function public.prevent_client_archive_with_balance();
+
 
 -- -----------------------------------------------------------------------------
 -- 12. CREDIT SALE FROM THE INVENTORY - one atomic step:
@@ -351,15 +444,16 @@ begin
     raise exception 'Not authenticated.';
   end if;
 
-  -- Idempotencia: misma clave = misma venta. El bloqueo evita que dos reintentos simultáneos la apliquen a la vez.
-  if p_request_id is not null then
-    perform pg_advisory_xact_lock(hashtext('fiado_sale:' || p_request_id::text));
-    select e.id into v_entry_id
-      from public.credit_entries e
-     where e.id = p_request_id and e.owner_id = v_owner;
-    if found then
-      return v_entry_id;
-    end if;
+  -- Toda venta debe llevar una clave. El bloqueo por dueño + clave serializa los reintentos.
+  if p_request_id is null then
+    raise exception 'An idempotency key is required to register a credit sale.';
+  end if;
+  perform pg_advisory_xact_lock(hashtext(v_owner::text), hashtext('fiado_sale:' || p_request_id::text));
+  select e.id into v_entry_id
+    from public.credit_entries e
+   where e.id = p_request_id and e.owner_id = v_owner;
+  if found then
+    return v_entry_id;
   end if;
 
   if p_items is null or jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 then
@@ -563,6 +657,9 @@ begin
   if v_id is null or v_type is null then
     raise exception 'Invalid operation.';
   end if;
+
+  -- Serialize the idempotency check, the write and its audit row as one unit.
+  perform pg_advisory_xact_lock(hashtext(v_owner::text), hashtext(v_id::text));
 
   -- Already received? (a retry after a lost answer)
   select a.status, a.message into v_prev

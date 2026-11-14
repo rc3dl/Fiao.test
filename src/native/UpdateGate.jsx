@@ -47,6 +47,13 @@ export default function UpdateGate({ enabled, online }) {
           </p>
         )}
         {update.downloadStarted && <p className="text-xs mb-3" style={{ color: "var(--ok-text)" }}>{t("The download started. When it finishes, open it to install. Your data is kept.")}</p>}
+        {update.downloadError && (
+          <p role="alert" className="text-xs mb-3" style={{ color: "var(--danger-text, #B91C1C)" }}>
+            {language === "es"
+              ? "El enlace del APK no pertenece al almacenamiento autorizado de FIA'O. No se abrió la descarga."
+              : "The APK link is not from FIA'O's approved storage. The download was not opened."}
+          </p>
+        )}
         <div className={`grid gap-3 ${update.mandatory ? "" : "grid-cols-2"}`}>
           {!update.mandatory && <button type="button" onClick={later} className="fiao-btn fiao-btn-ghost">{t("Later")}</button>}
           <button type="button" onClick={downloadUpdate} className="fiao-btn" style={{ backgroundColor: "#B91C1C", color: "#fff" }}>{t("Download and install")}</button>
