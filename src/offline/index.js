@@ -121,7 +121,7 @@ async function applyLegacy(op) {
     case "sale.fiado":
       return done(callFiadoSale(op, p));
     case "reminder.log":
-      return done(supabase.from("reminders").insert({ id: op.record_id, client_id: p.client_id, message: p.message, channel: "whatsapp" }));
+      return done(supabase.from("reminders").insert({ id: op.record_id, client_id: p.client_id, message: p.message, channel: "whatsapp", sent_at: op.occurred_at }));
     case "profile.update":
       return done(supabase.from("profiles").upsert({ id: op.user_id, ...p }));
     default:
