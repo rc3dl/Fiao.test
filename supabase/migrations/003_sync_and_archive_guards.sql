@@ -401,20 +401,22 @@ declare
   v_auto_block boolean;
   v_days integer;
   v_default_limit numeric(12,2);
+  v_archived boolean;
 begin
-  -- One entry at a time per customer (two simultaneous entries cannot skip the limit).
-  -- The archive guard below takes the same lock, so an archive cannot race a new credit.
-  perform pg_advisory_xact_lock(hashtext(new.client_id::text));
+  -- Lock the client row first. The archive trigger also runs while holding this row,
+  -- so a concurrent archive and credit cannot pass each other's balance checks.
+  select c.archived into v_archived
+    from public.clients c
+   where c.id = new.client_id
+     and c.owner_id = new.owner_id
+   for update;
 
-  if not exists (
-    select 1
-      from public.clients c
-     where c.id = new.client_id
-       and c.owner_id = new.owner_id
-       and not c.archived
-  ) then
+  if not found or coalesce(v_archived, true) then
     raise exception 'Customer not found or already archived.';
   end if;
+
+  -- Then serialize all credit/payment balance calculations for this customer.
+  perform pg_advisory_xact_lock(hashtext(new.client_id::text));
 
   -- Current balance of the customer, not counting this entry
   select coalesce(sum(case when kind = 'fiado' then amount end), 0),
