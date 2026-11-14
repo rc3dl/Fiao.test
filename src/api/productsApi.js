@@ -1,6 +1,7 @@
 // Conversaciones con la base de datos sobre productos y ventas fiadas.
 import { supabase } from "@/api/supabaseClient";
 import { mutate, newId, readOrLocal } from "@/offline";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 function check(error) {
   if (error) throw new Error(error.message);
@@ -13,12 +14,10 @@ export const PRODUCT_KEYS = [["products"], ["dashboard"]];
 const withNumbers = (p) => ({ ...p, price: Number(p.price), stock: Number(p.stock), min_stock: Number(p.min_stock) });
 
 async function fetchProductsRemote() {
-  const { data, error } = await supabase
-    .from("products")
-    .select("id, name, category, price, stock, unit, min_stock, image_url")
-    .eq("archived", false)
-    .order("name");
-  check(error);
+  const data = await fetchAllPages((from, to) =>
+    supabase.from("products").select("id, name, category, price, stock, unit, min_stock, image_url")
+      .eq("archived", false).order("name").order("id").range(from, to)
+  );
   return data.map(withNumbers);
 }
 
