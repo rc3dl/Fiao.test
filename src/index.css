@@ -520,3 +520,73 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
   .auth-footer { margin-top: 12px; }
   .auth-legal { margin-top: 12px; padding-top: 9px; }
 }
+
+
+/* ---- Tema de autenticación web: sigue el tema activo de FIA'O ---- */
+.auth-page {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground));
+}
+.auth-card {
+  background-color: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.auth-main {
+  background-color: hsl(var(--card)) !important;
+  color: hsl(var(--foreground));
+}
+.auth-title-block h1 {
+  color: hsl(var(--foreground)) !important;
+}
+.auth-title-block > p,
+.auth-back-link {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.auth-back-link:hover {
+  color: hsl(var(--foreground)) !important;
+}
+.auth-footer {
+  color: hsl(var(--muted-foreground)) !important;
+}
+.auth-footer a {
+  color: hsl(var(--primary)) !important;
+}
+.auth-legal {
+  border-color: hsl(var(--border)) !important;
+  color: hsl(var(--muted-foreground)) !important;
+}
+.auth-legal a:hover {
+  color: hsl(var(--foreground)) !important;
+}
+.auth-theme-toggle,
+.auth-language-toggle {
+  color: hsl(var(--muted-foreground));
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+.auth-theme-toggle:hover,
+.auth-language-toggle:hover {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--accent));
+  border-color: hsl(var(--border));
+}
+.auth-theme-toggle:focus-visible,
+.auth-language-toggle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Los botones sociales también cambian de superficie en el modo oscuro. */
+.oauth-provider-button {
+  color: hsl(var(--foreground)) !important;
+  background-color: hsl(var(--card)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.oauth-provider-button:hover {
+  color: hsl(var(--foreground)) !important;
+  background-color: hsl(var(--accent)) !important;
+  border-color: hsl(var(--border)) !important;
+}
+.dark .auth-card {
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+}
