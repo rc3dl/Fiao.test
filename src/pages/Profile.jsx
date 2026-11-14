@@ -112,7 +112,7 @@ export default function Profile() {
       <Navbar />
 
       <main className="flex-1">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8">
+        <div className="mx-auto w-full min-w-0 max-w-4xl px-4 sm:px-6 py-8">
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
             <div className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#F9D103" }}>
@@ -129,7 +129,7 @@ export default function Profile() {
           </div>
 
           {/* Business information */}
-          <form data-tour="profile-info" onSubmit={submitInfo} className="rounded-2xl p-6 mb-6" style={card}>
+          <form data-tour="profile-info" onSubmit={submitInfo} className="w-full min-w-0 max-w-full rounded-2xl p-6 mb-6" style={card}>
             <h2 className="font-bold text-lg mb-5 flex items-center gap-2" style={{ color: "var(--text)" }}>
               <Store className="w-5 h-5" style={{ color: "var(--accent-text)" }} /> {t("Business information")}
             </h2>
@@ -298,7 +298,7 @@ export default function Profile() {
           </div>
 
           {/* Log out */}
-          <div className="rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4" style={card}>
+          <div className="w-full min-w-0 max-w-full rounded-2xl p-6 flex flex-wrap items-center justify-between gap-4" style={card}>
             <div>
               <h2 className="font-bold text-lg" style={{ color: "var(--text)" }}>{t("Close session")}</h2>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>{t("Sign out of your account on this device.")}</p>
@@ -328,7 +328,7 @@ function Field({ icon: Icon, label, name, value, onChange, hint, inputMode }) {
       <span className="text-xs font-semibold mb-1.5 block" style={{ color: "var(--text-muted)" }}>{label}</span>
       <div className="flex items-center gap-2 rounded-xl px-3 py-2.5" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
         <Icon className="w-4 h-4 flex-shrink-0" style={{ color: "var(--accent-text)" }} />
-        <input name={name} value={value} onChange={onChange} inputMode={inputMode} className="flex-1 bg-transparent outline-none text-sm" style={{ color: "var(--text)" }} />
+        <input name={name} value={value} onChange={onChange} inputMode={inputMode} className="min-w-0 w-full flex-1 bg-transparent outline-none text-sm" style={{ color: "var(--text)" }} />
       </div>
       {hint && <span className="text-[11px] mt-1 block" style={{ color: "var(--text-faint)" }}>{hint}</span>}
     </label>
@@ -337,12 +337,12 @@ function Field({ icon: Icon, label, name, value, onChange, hint, inputMode }) {
 
 function SettingRow({ icon: Icon, title, value }) {
   return (
-    <div className="flex items-center justify-between py-3" style={{ borderTop: "1px solid var(--border-cream)" }}>
-      <div className="flex items-center gap-3">
-        <Icon className="w-4 h-4" style={{ color: "var(--accent-text)" }} />
+    <div className="flex min-w-0 items-center justify-between gap-3 py-3" style={{ borderTop: "1px solid var(--border-cream)" }}>
+      <div className="flex min-w-0 items-center gap-3">
+        <Icon className="w-4 h-4 shrink-0" style={{ color: "var(--accent-text)" }} />
         <span className="text-sm font-medium" style={{ color: "var(--text)" }}>{title}</span>
       </div>
-      <span className="text-sm" style={{ color: "var(--text-muted)" }}>{value}</span>
+      <span className="min-w-0 max-w-[58%] break-all text-right text-sm" style={{ color: "var(--text-muted)" }}>{value}</span>
     </div>
   );
 }
