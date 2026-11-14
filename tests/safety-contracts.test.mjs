@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { isTrustedReleaseUrl } from "../src/lib/trustedReleaseUrl.js";
+import { mergeProfileCache } from "../src/lib/profileCache.js";
 
 const supabaseUrl = "https://demo-project.supabase.co";
 
@@ -90,4 +91,23 @@ test("auth changes clear account-scoped query cache and profile writes use the o
   assert.match(offline, /lifecycleGeneration/);
   assert.match(offline, /if \(isStale\(\)\) return/);
   assert.match(authClient, /wipeOnLogout\(userId\)/);
+});
+
+test("profile cache merges offline setup fields without creating an unverified session", () => {
+  const values = new Map();
+  const storage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, value),
+  };
+  values.set("fiao:me:u1", JSON.stringify({ id: "u1", email: "test@example.com", full_name: "Old", store_name: "Old store" }));
+
+  assert.equal(mergeProfileCache(storage, "u1", { full_name: "New", store_name: "New store" }), true);
+  assert.deepEqual(JSON.parse(values.get("fiao:me:u1")), {
+    id: "u1",
+    email: "test@example.com",
+    full_name: "New",
+    store_name: "New store",
+  });
+  assert.equal(mergeProfileCache(storage, "u2", { store_name: "Wrong account" }), false);
+  assert.equal(values.has("fiao:me:u2"), false);
 });
