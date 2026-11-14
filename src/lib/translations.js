@@ -145,6 +145,8 @@ export const translations = {
       "Payment reminder ready": "Recordatorio de pago listo",
       "WhatsApp to": "WhatsApp para",
       "Open in WhatsApp": "Abrir en WhatsApp",
+      "After sending it in WhatsApp, return here and confirm.": "Después de enviarlo por WhatsApp, vuelve aquí y confirma.",
+      "I sent the message": "Ya envié el mensaje",
       "Add a phone number to": "Agrega un teléfono a",
       "to send reminders.": "para enviar recordatorios.",
       "Keep track of pending payments and send friendly reminders — no awkward conversations.": "Controla los pagos pendientes y envía recordatorios amables, sin conversaciones incómodas.",
