@@ -78,7 +78,8 @@ export function ProductModal({ product, categories, onClose }) {
   }, [onClose]);
 
   const save = useMutation({
-    mutationFn: (values) => (isNew ? addProduct(values) : editProduct(product.id, values)),
+    mutationFn: (/** @type {{ name: string; category: string | null; price: number; stock: number; unit: string; min_stock: number; image_url: string | null }} */ values) =>
+      (isNew ? addProduct(values) : editProduct(product.id, values)),
     onSuccess: () => {
       PRODUCT_KEYS.forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
       onClose();
@@ -216,7 +217,7 @@ export function SaleTab({ products, query, initialCart = {} }) {
 
   const sale = useMutation({
     mutationFn: registerFiadoSale,
-    onSuccess: (result, vars) => {
+    onSuccess: (result) => {
       [...LEDGER_KEYS, ...PRODUCT_KEYS].forEach((key) => queryClient.invalidateQueries({ queryKey: key }));
       setCart({});
       setDue("");
@@ -225,8 +226,8 @@ export function SaleTab({ products, query, initialCart = {} }) {
       // Sin conexión la venta queda en la cola del teléfono: todavía no está confirmada en la nube.
       setMsg(
         result?.status === "queued"
-          ? { type: "ok", textKey: "Sale saved on this phone: {amount} for {name}. It will be confirmed when it syncs.", vars: { amount: money(vars.total), name: vars.clientName } }
-          : { type: "ok", textKey: "Sale registered: {amount} added to {name}'s debt.", vars: { amount: money(vars.total), name: vars.clientName } }
+          ? { type: "ok", textKey: "Sale saved on this phone: {amount} for {name}. It will be confirmed when it syncs.", vars: { amount: money(total), name: client.name } }
+          : { type: "ok", textKey: "Sale registered: {amount} added to {name}'s debt.", vars: { amount: money(total), name: client.name } }
       );
     },
     onError: (e) => setMsg({ type: "error", text: e.message }),
@@ -247,8 +248,6 @@ export function SaleTab({ products, query, initialCart = {} }) {
       request_id: saleKey.current.id,
       due_date: due,
       note,
-      total,
-      clientName: client.name,
     });
   };
 
