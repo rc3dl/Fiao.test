@@ -600,3 +600,40 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
 .auth-glow-red {
   background-color: color-mix(in srgb, var(--navbar-bg) 10%, transparent);
 }
+
+
+/* ---- Android: evita desbordes horizontales en Clientes y Perfil sin bloquear el scroll vertical ---- */
+html.is-native,
+html.is-native body,
+html.is-native #root {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+html.is-native body,
+html.is-native #root {
+  min-height: 100dvh;
+}
+html.is-native main {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+html.is-native main > div {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+html.is-native [data-tour^="clients-"],
+html.is-native [data-tour^="profile-"] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+html.is-native [data-tour^="profile-"] > *,
+html.is-native [data-tour^="clients-"] > * {
+  min-width: 0;
+}
