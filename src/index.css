@@ -352,14 +352,15 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
 
 /* ---- Autenticación web: todo el formulario visible al 100% de zoom ---- */
 .auth-page {
+  overflow-y: auto;
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
   padding: clamp(10px, 2vh, 18px) clamp(12px, 2vw, 24px);
 }
 .auth-card { width: 100%; max-width: 64rem; }
-.auth-main { min-width: 0; }
-.auth-main-inner { min-width: 0; }
+.auth-main { min-width: 0; align-items: flex-start !important; }
+.auth-main-inner { min-width: 0; margin-block: auto; }
 .auth-content { min-width: 0; }
 .auth-footer {
   display: flex;
@@ -471,7 +472,7 @@ html.is-native .fiao-auth-panel a { padding-block: 0.35rem; display: inline-bloc
 }
 
 @media (max-height: 760px) and (max-width: 1023px) {
-  .auth-page { padding-top: 10px; padding-bottom: 10px; }
+  .auth-page { align-items: flex-start; padding-top: 10px; padding-bottom: 10px; }
   .auth-main { padding-top: 13px; padding-bottom: 13px; }
   .auth-mobile-logo { display: none; }
   .auth-topbar { margin-bottom: 10px; }
