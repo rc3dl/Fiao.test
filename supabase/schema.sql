@@ -83,7 +83,7 @@ create or replace function public.enforce_whole_product_units()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 begin
   if TG_OP = 'INSERT' then
     if new.unit not in ('lb', 'kg', 'liter')
@@ -107,7 +107,7 @@ begin
   end if;
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists products_whole_units_guard on public.products;
 create trigger products_whole_units_guard
@@ -373,7 +373,7 @@ create or replace function public.prevent_client_archive_with_balance()
 returns trigger
 language plpgsql
 set search_path = ''
-as $
+as $$
 declare
   v_balance numeric(12,2);
 begin
@@ -393,7 +393,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 drop trigger if exists clients_prevent_archive_with_balance on public.clients;
 create trigger clients_prevent_archive_with_balance
