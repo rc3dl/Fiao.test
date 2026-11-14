@@ -87,6 +87,7 @@ test("auth changes clear account-scoped query cache and profile writes use the o
   assert.match(auth, /queryClientInstance\.clear\(\)/);
   assert.match(authClient, /type: "profile\.update"/);
   assert.match(setupApi, /type: "profile\.update"/);
+  assert.match(setupApi, /readStoredSession\(\)\?\.user/);
   const offline = await readFile(new URL("../src/offline/index.js", import.meta.url), "utf8");
   assert.match(offline, /lifecycleGeneration/);
   assert.match(offline, /if \(isStale\(\)\) return/);
