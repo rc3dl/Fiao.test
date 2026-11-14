@@ -3,14 +3,17 @@ import { supabase } from "@/api/supabaseClient";
 import { fetchLedger } from "@/api/creditApi";
 import { isLowStock } from "@/lib/credit";
 import { readOrLocal } from "@/offline";
+import { fetchAllPages } from "@/lib/supabasePagination";
 
 async function fetchDashboardRemote() {
   const [ledger, productsRes] = await Promise.all([
     fetchLedger(), // clientes con saldo, movimientos, nombres y ajustes
-    supabase.from("products").select("id, name, stock, min_stock, unit").eq("archived", false),
+    fetchAllPages((from, to) =>
+      supabase.from("products").select("id, name, stock, min_stock, unit")
+        .eq("archived", false).order("id").range(from, to)
+    ),
   ]);
-  if (productsRes.error) throw new Error(productsRes.error.message);
-  return { ...ledger, lowStock: productsRes.data.filter(isLowStock) };
+  return { ...ledger, lowStock: productsRes.filter(isLowStock) };
 }
 
 export function fetchDashboard() {
