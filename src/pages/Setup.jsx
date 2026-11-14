@@ -150,6 +150,7 @@ export default function Setup() {
   );
 }
 
+/** @param {{ icon: React.ElementType; label: string; name: string; value: string | number; onChange: (event: React.ChangeEvent<HTMLInputElement>) => void; placeholder?: string; hint?: string; inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]; autoFocus?: boolean }} props */
 function Field({ icon: Icon, label, name, value, onChange, placeholder, hint, inputMode, autoFocus }) {
   return (
     <label className="block">
