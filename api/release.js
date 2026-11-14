@@ -20,6 +20,9 @@ const same = (a, b) => {
 // Validación estricta: solo se aceptan los tipos exactos (nada de "false" como texto ni "10001abc").
 function validateRelease(b, supabaseUrl) {
   const problems = [];
+  if (typeof b.apk_url !== "string" || b.apk_url.length > 2048) {
+    problems.push("apk_url must be a URL up to 2048 characters");
+  }
   if (typeof b.version_name !== "string" || !/^\d+\.\d+\.\d+([-+][0-9A-Za-z.-]+)?$/.test(b.version_name.trim()) || b.version_name.length > 40) {
     problems.push("version_name must be a version like 1.0.1");
   }
