@@ -48,7 +48,6 @@ jobs:
           # The PR build is static; placeholders let fork PRs build without repository secrets.
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://build-placeholder.supabase.co' }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY || 'build-placeholder-anon-key' }}
-          VITE_ENABLE_GOOGLE: ${{ vars.VITE_ENABLE_GOOGLE || 'true' }}
 
   build:
     needs: verify
