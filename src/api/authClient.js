@@ -229,7 +229,18 @@ export const base44 = {
     setToken(_accessToken) {},
 
     async logout(redirectUrl) {
-      if (IS_NATIVE) await import("@/offline").then((m) => m.wipeOnLogout()).catch(() => {});
+      if (IS_NATIVE) {
+        let userId = null;
+        try {
+          const { data } = await supabase.auth.getSession();
+          userId = data?.session?.user?.id || readStoredSession()?.user?.id || null;
+        } catch {
+          userId = readStoredSession()?.user?.id || null;
+        }
+        if (userId) {
+          await import("@/offline").then((m) => m.wipeOnLogout(userId)).catch(() => {});
+        }
+      }
       await supabase.auth.signOut();
 
       if (redirectUrl) {
