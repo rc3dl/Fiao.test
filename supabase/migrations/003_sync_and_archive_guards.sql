@@ -13,6 +13,29 @@ alter table public.clients
 alter table public.products
   add column if not exists updated_at timestamptz not null default now();
 
+-- Keep optimistic concurrency timestamps current on every edit.
+create or replace function public.touch_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $
+begin
+  new.updated_at := now();
+  return new;
+end;
+$;
+
+drop trigger if exists clients_touch_updated_at on public.clients;
+create trigger clients_touch_updated_at
+  before update on public.clients
+  for each row execute function public.touch_updated_at();
+
+drop trigger if exists products_touch_updated_at on public.products;
+create trigger products_touch_updated_at
+  before update on public.products
+  for each row execute function public.touch_updated_at();
+
+
 create table if not exists public.audit_log (
   id uuid primary key,
   owner_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
