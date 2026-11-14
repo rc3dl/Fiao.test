@@ -4,14 +4,15 @@
 // sin desinstalar y se conservan los datos.
 import { App } from "@capacitor/app";
 import { supabase } from "@/api/supabaseClient";
-import { UPDATES_URL } from "@/lib/env";
+import { UPDATES_URL, SUPABASE_URL } from "@/lib/env";
+import { isTrustedReleaseUrl } from "@/lib/trustedReleaseUrl";
 import { compareReleases } from "@/lib/versions";
 import { openExternal } from "@/native/openExternal";
 
 const COLUMNS = "version_name, version_code, apk_url, notes_es, notes_en, mandatory, created_at";
 const EVERY_MS = 6 * 60 * 60 * 1000;
 
-const INITIAL = { status: "idle", installed: null, latest: null, mandatory: false, checkedAt: null, downloadStarted: false };
+const INITIAL = { status: "idle", installed: null, latest: null, mandatory: false, checkedAt: null, downloadStarted: false, downloadError: null };
 let state = INITIAL;
 const listeners = new Set();
 const set = (patch) => {
@@ -59,7 +60,15 @@ export async function checkForUpdate({ force = false } = {}) {
 }
 
 export function downloadUpdate() {
-  if (!state.latest?.apk_url) return;
-  openExternal(state.latest.apk_url);
-  set({ downloadStarted: true });
+  const apkUrl = state.latest?.apk_url;
+  if (!apkUrl) return false;
+
+  if (!isTrustedReleaseUrl(apkUrl, SUPABASE_URL)) {
+    set({ downloadStarted: false, downloadError: "untrusted-apk-url" });
+    return false;
+  }
+
+  openExternal(apkUrl);
+  set({ downloadStarted: true, downloadError: null });
+  return true;
 }
