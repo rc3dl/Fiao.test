@@ -33,7 +33,7 @@ function StatusBadge({ status }) {
   };
   const s = map[status] || map.Pending;
   return (
-    <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: s.bg, color: s.color }}>
+    <span className="px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap shrink-0" style={{ backgroundColor: s.bg, color: s.color }}>
       {t(status)}
     </span>
   );
@@ -272,23 +272,42 @@ export default function Credit() {
                         const isPayment = row.kind === "pago";
                         const Icon = isPayment ? Banknote : ShoppingCart;
                         return (
-                          <div key={row.id} className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2 p-3 rounded-xl" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
-                            <span className="text-xs font-semibold w-14" style={{ color: "var(--text-muted)" }}>{shortDate(row.created_at, language === "es" ? "es-PA" : "en-GB")}</span>
-                            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: isPayment ? "var(--ok-bg)" : "var(--warn-bg)" }}>
+                          <div
+                            key={row.id}
+                            className="grid grid-cols-[auto_auto_minmax(0,1fr)] sm:grid-cols-[auto_auto_minmax(0,1fr)_auto_auto_auto] items-center gap-x-3 gap-y-2 p-3 rounded-xl"
+                            style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}
+                          >
+                            <span className="text-xs font-semibold whitespace-nowrap shrink-0" style={{ color: "var(--text-muted)" }}>
+                              {shortDate(row.created_at, language === "es" ? "es-PA" : "en-GB")}
+                            </span>
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                              style={{ backgroundColor: isPayment ? "var(--ok-bg)" : "var(--warn-bg)" }}
+                            >
                               <Icon className="w-4 h-4" style={{ color: isPayment ? "var(--ok-text)" : "var(--warn-text)" }} />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium whitespace-pre-wrap break-words [overflow-wrap:anywhere]" style={{ color: "var(--text)" }}>
+                            <div className="min-w-0">
+                              <p
+                                className="text-sm font-medium whitespace-normal break-words"
+                                style={{ color: "var(--text)", overflowWrap: "anywhere" }}
+                              >
                                 {row.description || (isPayment ? t("Payment") : t("Credit sale"))}
                               </p>
                               {!isPayment && row.due_date && row.status !== "Paid" && (
-                                <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>{t("Due")} {shortYmd(row.due_date, language === "es" ? "es-PA" : "en-GB")}</p>
+                                <p className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+                                  {t("Due")} {shortYmd(row.due_date, language === "es" ? "es-PA" : "en-GB")}
+                                </p>
                               )}
                             </div>
-                            <span className="text-sm font-bold" style={{ color: isPayment ? "var(--ok-text)" : "var(--text)" }}>
+                            <span
+                              className="text-sm font-bold whitespace-nowrap shrink-0"
+                              style={{ color: isPayment ? "var(--ok-text)" : "var(--text)" }}
+                            >
                               {isPayment ? "− " : ""}{money(row.amount)}
                             </span>
-                            <SyncBadge status={row._sync} />
+                            <div className="shrink-0">
+                              <SyncBadge status={row._sync} />
+                            </div>
                             <StatusBadge status={row.status} />
                           </div>
                         );
