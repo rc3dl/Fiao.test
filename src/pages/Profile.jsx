@@ -50,7 +50,7 @@ export default function Profile() {
   const rulesDirty = isDirty(rulesDraft, rulesSaved);
 
   const saveInfo = useMutation({
-    mutationFn: (/** @type {{ full_name: string; store_name: string; phone: string; address: string; ruc: string }} */ values) =>
+    mutationFn: (/** @type {Record<string, string>} */ values) =>
       base44.auth.updateMe(values),
     onSuccess: async () => {
       await refreshUser(); // para que el nombre de la tienda se actualice en toda la web
@@ -95,7 +95,7 @@ export default function Profile() {
     setInfoNote(null);
     const result = validateProfile(infoForm);
     if (result.error) return setInfoNote({ type: "error", text: result.error });
-    saveInfo.mutate(/** @type {{ full_name: string; store_name: string; phone: string; address: string; ruc: string }} */ (result.values));
+    saveInfo.mutate(result.values);
   };
   const submitRules = (e) => {
     e.preventDefault();
@@ -138,8 +138,25 @@ export default function Profile() {
               <Field icon={Store} label={t("Store name")} name="store_name" value={infoForm.store_name} onChange={handleInfoChange} hint={t("Appears in the reminders you send to your customers.")} />
               <Field icon={Phone} label={t("Phone")} name="phone" value={infoForm.phone} onChange={handleInfoChange} inputMode="tel" />
               <Field icon={Mail} label={t("RUC / ID")} name="ruc" value={infoForm.ruc} onChange={handleInfoChange} />
-              <div className="sm:col-span-2">
-                <Field icon={MapPin} label={t("Address")} name="address" value={infoForm.address} onChange={handleInfoChange} />
+              <div className="sm:col-span-2 rounded-xl p-4" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
+                <div className="flex items-center gap-2 mb-1">
+                  <MapPin className="w-4 h-4" style={{ color: "var(--accent-text)" }} />
+                  <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                    {language === "es" ? "Ubicación de la tienda (opcional)" : "Store location (optional)"}
+                  </h3>
+                </div>
+                <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+                  {language === "es" ? "Completa los datos que tengas para identificar dónde está tu tienda." : "Fill in whichever details you have to identify your store's location."}
+                </p>
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <Field icon={MapPin} label={language === "es" ? "Calle o avenida" : "Street or avenue"} name="street" value={infoForm.street} onChange={handleInfoChange} />
+                  <Field icon={MapPin} label={language === "es" ? "Corregimiento" : "Corregimiento"} name="corregimiento" value={infoForm.corregimiento} onChange={handleInfoChange} />
+                  <Field icon={MapPin} label={language === "es" ? "Distrito" : "District"} name="district" value={infoForm.district} onChange={handleInfoChange} />
+                  <Field icon={MapPin} label={language === "es" ? "Provincia" : "Province"} name="province" value={infoForm.province} onChange={handleInfoChange} />
+                  <div className="sm:col-span-2">
+                    <Field icon={MapPin} label={language === "es" ? "Local, plaza o referencia adicional" : "Store, plaza or additional reference"} name="address_reference" value={infoForm.address_reference} onChange={handleInfoChange} />
+                  </div>
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3 mt-5">

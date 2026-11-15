@@ -4,15 +4,58 @@ import { parseAmount, validatePhone } from "./credit.js";
 const MAX_TEXT = 200;
 
 // --- Datos del negocio ------------------------------------------------------
+const LOCATION_PREFIX = "FIAO_LOCATION_V1:";
+
+function parseStoreLocation(value) {
+  const raw = String(value || "");
+  if (raw.startsWith(LOCATION_PREFIX)) {
+    try {
+      const parsed = JSON.parse(raw.slice(LOCATION_PREFIX.length));
+      return {
+        street: parsed.street || "",
+        corregimiento: parsed.corregimiento || "",
+        district: parsed.district || "",
+        province: parsed.province || "",
+        address_reference: parsed.address_reference || "",
+      };
+    } catch {
+      // Si el dato guardado no tiene el formato esperado, se conserva como referencia.
+    }
+  }
+  return { street: "", corregimiento: "", district: "", province: "", address_reference: raw };
+}
+
+function serializeStoreLocation(form) {
+  const location = {
+    street: String(form.street || "").trim(),
+    corregimiento: String(form.corregimiento || "").trim(),
+    district: String(form.district || "").trim(),
+    province: String(form.province || "").trim(),
+    address_reference: String(form.address_reference || "").trim(),
+  };
+  if (!Object.values(location).some(Boolean)) return "";
+  return LOCATION_PREFIX + JSON.stringify(location);
+}
+
 export const userToForm = (user) => ({
   full_name: user?.full_name || "",
   store_name: user?.store_name || "",
   phone: user?.phone || "",
-  address: user?.address || "",
+  ...parseStoreLocation(user?.address),
   ruc: user?.ruc || "",
 });
 
-const FIELD_LABELS = { full_name: "Full name", store_name: "Store name", phone: "Phone", address: "Address", ruc: "RUC / ID" };
+const FIELD_LABELS = {
+  full_name: "Full name",
+  store_name: "Store name",
+  phone: "Phone",
+  ruc: "RUC / ID",
+  street: "Street or avenue",
+  corregimiento: "Corregimiento",
+  district: "District",
+  province: "Province",
+  address_reference: "Additional address reference",
+};
 
 // Devuelve { error } o { values } listos para guardar.
 export function validateProfile(form) {
@@ -22,6 +65,7 @@ export function validateProfile(form) {
     if (v.length > MAX_TEXT) return { error: `${FIELD_LABELS[key]} is too long (maximum ${MAX_TEXT} characters).` };
     values[key] = v;
   }
+  values.address = serializeStoreLocation(form);
   const phoneError = validatePhone(values.phone);
   if (phoneError) return { error: phoneError };
   return { values };
