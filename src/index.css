@@ -191,20 +191,20 @@ html.is-native [data-tour="bell"] [role="dialog"] {
 /* ---- Barra inferior flotante: límites de pantalla y centrado adaptativo ---- */
 .fiao-dock {
   position: fixed;
-  left: max(16px, env(safe-area-inset-left, 0px));
-  right: max(16px, env(safe-area-inset-right, 0px));
+  left: 50%;
+  right: auto;
   bottom: calc(var(--sab) + 10px);
   z-index: 40;
-  width: auto;
-  max-width: 440px;
-  margin-inline: auto;
+  width: min(380px, calc(100vw - 32px));
+  max-width: 380px;
+  margin: 0;
   box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 6px;
-  transform: none;
+  gap: 3px;
+  padding: 5px;
+  transform: translateX(-50%);
   border-radius: 30px;
   background-color: var(--dock-bg);
   box-shadow: 0 16px 36px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.07);
@@ -224,7 +224,7 @@ html.is-native [data-tour="bell"] [role="dialog"] {
   transition: max-width 0.38s var(--ease-out), opacity 0.2s;
 }
 .fiao-tab.is-active .fiao-tab-label { max-width: 86px; opacity: 1; }
-html[data-kb] .fiao-dock { transform: translateY(calc(100% + 40px)); opacity: 0; pointer-events: none; }
+html[data-kb] .fiao-dock { transform: translate(-50%, calc(100% + 40px)); opacity: 0; pointer-events: none; }
 html[data-kb] [data-tour="clients-new"] { opacity: 0; pointer-events: none; }
 
 /* ---- Hojas inferiores (Más, confirmaciones y ventanas de Clientes/Productos) ---- */
@@ -304,7 +304,7 @@ html.is-native [data-tour="clients-new"] {
 @keyframes fiao-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes fiao-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fiao-sheet { from { transform: translateY(100%); } to { transform: none; } }
-@keyframes fiao-dock-in { from { transform: translateY(120%); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fiao-dock-in { from { transform: translate(-50%, 120%); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
 @keyframes fiao-pulse { 50% { opacity: 0.45; } }
 @keyframes fiao-pop { from { opacity: 0; transform: scale(0.82); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
