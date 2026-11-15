@@ -272,13 +272,13 @@ export default function Credit() {
                         const isPayment = row.kind === "pago";
                         const Icon = isPayment ? Banknote : ShoppingCart;
                         return (
-                          <div key={row.id} className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-2 p-3 rounded-xl" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
+                          <div key={row.id} className="flex flex-wrap sm:flex-nowrap items-start gap-x-3 gap-y-2 p-3 rounded-xl" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
                             <span className="text-xs font-semibold w-14" style={{ color: "var(--text-muted)" }}>{shortDate(row.created_at, language === "es" ? "es-PA" : "en-GB")}</span>
                             <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: isPayment ? "var(--ok-bg)" : "var(--warn-bg)" }}>
                               <Icon className="w-4 h-4" style={{ color: isPayment ? "var(--ok-text)" : "var(--warn-text)" }} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" style={{ color: "var(--text)" }}>
+                              <p className="text-sm font-medium whitespace-pre-wrap break-words [overflow-wrap:anywhere]" style={{ color: "var(--text)" }}>
                                 {row.description || (isPayment ? t("Payment") : t("Credit sale"))}
                               </p>
                               {!isPayment && row.due_date && row.status !== "Paid" && (
