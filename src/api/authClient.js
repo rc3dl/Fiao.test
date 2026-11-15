@@ -208,11 +208,19 @@ export const base44 = {
     async loginWithProvider(provider, returnTo = "/dashboard") {
       assertReady();
       if (!OAUTH_PROVIDERS.has(provider)) throw new Error("Este método de inicio de sesión no está disponible.");
+
+      // Android: Google usa Credential Manager y entrega el ID token directamente a Supabase.
+      // Los demás proveedores conservan el flujo OAuth actual.
+      if (IS_NATIVE && provider === "google") {
+        const { loginWithGoogleNative } = await import("@/native/googleAuth");
+        await loginWithGoogleNative();
+        return;
+      }
+
       if (IS_NATIVE) {
-        // Android: los proveedores OAuth se abren en el navegador del sistema (no dentro del WebView)
-        // y Supabase devuelve a la app por NATIVE_REDIRECT (lo recibe src/native/native.js).
+        // Android: los demás proveedores OAuth se abren en el navegador del sistema.
+        // Supabase devuelve a la app por NATIVE_REDIRECT (lo recibe src/native/native.js).
         const nativeOptions = { redirectTo: NATIVE_REDIRECT, skipBrowserRedirect: true };
-        // Microsoft Entra requires the email scope for Supabase to receive a usable email address.
         if (provider === "azure") nativeOptions.scopes = "email";
         const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
           provider,
@@ -223,14 +231,14 @@ export const base44 = {
         await Browser.open({ url: data.url });
         return;
       }
+
+      // En web se conserva exactamente el inicio de sesión OAuth que ya existía.
       const webOptions = { redirectTo: window.location.origin + withBase(returnTo) };
-      // Microsoft Entra requires the email scope for Supabase to receive a usable email address.
       if (provider === "azure") webOptions.scopes = "email";
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: webOptions,
       });
-
       fail(error);
     },
 
