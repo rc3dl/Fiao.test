@@ -8,6 +8,11 @@ const config: CapacitorConfig = {
   backgroundColor: '#B91C1C',
   server: { androidScheme: 'https' },
   plugins: {
+    SystemBars: {
+      insetsHandling: 'css',
+      initialViewportFitValueHint: 'cover',
+      hidden: true,
+    },
     LocalNotifications: { smallIcon: 'ic_stat_fiao', iconColor: '#B91C1C' },
   },
 };

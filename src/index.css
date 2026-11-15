@@ -671,3 +671,163 @@ html.is-native .fiao-sheet .grid > button {
     flex-wrap: wrap;
   }
 }
+
+
+/* =====================================================================
+   FIA'O · Ajuste responsive global para Android
+   Protege el contenido en teléfonos estrechos, pantallas altas y horizontal.
+   ===================================================================== */
+html.is-native,
+html.is-native body,
+html.is-native #root {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+html.is-native body,
+html.is-native #root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+}
+html.is-native main {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+html.is-native main > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+html.is-native main :where(img, video, canvas) {
+  max-width: 100%;
+  height: auto;
+}
+html.is-native main :where(input, select, textarea, button) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+html.is-native main :where(.overflow-x-auto) {
+  max-width: 100%;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+html.is-native .fiao-topbar {
+  width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
+  padding-left: max(10px, var(--safe-area-inset-left, env(safe-area-inset-left, 0px)));
+  padding-right: max(10px, var(--safe-area-inset-right, env(safe-area-inset-right, 0px)));
+}
+html.is-native .fiao-dock {
+  width: min(
+    380px,
+    calc(
+      100vw
+      - max(16px, var(--safe-area-inset-left, env(safe-area-inset-left, 0px)))
+      - max(16px, var(--safe-area-inset-right, env(safe-area-inset-right, 0px)))
+    )
+  );
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+}
+html.is-native .fiao-toast {
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+html.is-native .fixed.inset-0 > [role="dialog"] {
+  box-sizing: border-box;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+html.is-native .fiao-sheet {
+  max-height: calc(100dvh - var(--sat) - 12px);
+}
+@media (max-width: 360px) {
+  html.is-native .fiao-topbar {
+    gap: 6px;
+  }
+  html.is-native .fiao-icon-btn,
+  html.is-native [data-tour="bell"] > button {
+    width: 38px;
+    height: 38px;
+  }
+  html.is-native .fiao-pill {
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 11px;
+  }
+  html.is-native .fiao-dock {
+    gap: 2px;
+    padding: 4px;
+  }
+  html.is-native .fiao-tab {
+    height: 44px;
+  }
+  html.is-native .fiao-tab.is-active {
+    gap: 4px;
+  }
+  html.is-native .fiao-tab-label {
+    font-size: 11px;
+  }
+  html.is-native .fiao-tab.is-active .fiao-tab-label {
+    max-width: 66px;
+  }
+  html.is-native [data-tour="products-grid"] {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 136px), 1fr));
+  }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  html.is-native.has-dock main {
+    padding-bottom: calc(52px + var(--sab) + 20px);
+  }
+  html.is-native .fiao-topbar {
+    padding-top: calc(var(--sat) + 4px);
+    padding-bottom: 4px;
+  }
+  html.is-native .fiao-topbar img {
+    height: 24px;
+  }
+  html.is-native .fiao-icon-btn,
+  html.is-native [data-tour="bell"] > button {
+    width: 34px;
+    height: 34px;
+  }
+  html.is-native .fiao-dock {
+    bottom: calc(var(--sab) + 4px);
+  }
+  html.is-native .fiao-tab {
+    height: 40px;
+  }
+  html.is-native .fiao-sheet {
+    max-height: calc(100dvh - var(--sat) - 8px);
+    padding-top: 8px;
+  }
+  html.is-native .fixed.inset-0 > [role="dialog"] {
+    max-height: calc(100dvh - var(--sat) - 8px) !important;
+  }
+  html.is-native .fiao-auth-hero {
+    max-height: 180px;
+    padding-top: calc(var(--sat) + 12px);
+    padding-bottom: 22px;
+  }
+  html.is-native .fiao-auth-logo {
+    height: 36px;
+  }
+  html.is-native .fiao-auth-panel {
+    padding-top: 18px;
+    padding-bottom: calc(18px + var(--sab));
+  }
+}

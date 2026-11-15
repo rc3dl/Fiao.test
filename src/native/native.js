@@ -65,7 +65,10 @@ export async function initNative() {
     /* se ignora */
   }
 
+  // Mantener ocultas ambas barras del sistema; la configuración nativa también
+  // las oculta antes del primer pintado para evitar la franja superior al arrancar.
   try {
+    await SystemBars.hide({ bar: SystemBarType.StatusBar });
     await SystemBars.hide({ bar: SystemBarType.NavigationBar });
   } catch {
     /* se ignora */
