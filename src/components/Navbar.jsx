@@ -23,6 +23,7 @@ const PUBLIC_ITEMS = [
   { target: "#como-funciona", es: "Cómo funciona", en: "How it works" },
   { target: "#funciones", es: "Funciones", en: "Features" },
   { target: "#android", es: "Android", en: "Android" },
+  { target: "#instalar-android", es: "Instalar app", en: "Install app" },
   { target: "#preguntas", es: "Preguntas", en: "FAQ" },
 ];
 
