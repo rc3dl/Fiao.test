@@ -312,6 +312,15 @@ export default function Home() {
                     </>
                   )}
 
+                  <Link
+                    to="#instalar-android"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition hover:bg-[#FFF9E5]"
+                    style={{ borderColor: "#E8DFAF", color: "#8B6500" }}
+                  >
+                    {es ? "Ver guía de instalación" : "View installation guide"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+
                   <p className="mt-4 text-[11px] leading-relaxed" style={{ color: "#8A8178" }}>
                     {es
                       ? "Instala únicamente APK distribuidos mediante enlaces oficiales de FIA'O. Android puede solicitar confirmación antes de instalar."
