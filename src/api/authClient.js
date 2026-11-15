@@ -213,7 +213,7 @@ export const base44 = {
       // Los demás proveedores conservan el flujo OAuth actual.
       if (IS_NATIVE && provider === "google") {
         const { loginWithGoogleNative } = await import("@/native/googleAuth");
-        await loginWithGoogleNative();
+        await loginWithGoogleNative(returnTo);
         return;
       }
 
