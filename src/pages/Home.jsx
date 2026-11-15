@@ -9,6 +9,7 @@ import {
   ChevronDown,
   CreditCard,
   Download,
+  FolderOpen,
   MessageCircle,
   Package,
   ShieldCheck,
@@ -311,6 +312,15 @@ export default function Home() {
                     </>
                   )}
 
+                  <Link
+                    to="#instalar-android"
+                    className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border px-5 py-3 text-sm font-bold transition hover:bg-[#FFF9E5]"
+                    style={{ borderColor: "#E8DFAF", color: "#8B6500" }}
+                  >
+                    {es ? "Ver guía de instalación" : "View installation guide"}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+
                   <p className="mt-4 text-[11px] leading-relaxed" style={{ color: "#8A8178" }}>
                     {es
                       ? "Instala únicamente APK distribuidos mediante enlaces oficiales de FIA'O. Android puede solicitar confirmación antes de instalar."
@@ -318,6 +328,95 @@ export default function Home() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="instalar-android" className="w-full scroll-mt-8" style={{ backgroundColor: "var(--surface-alt)" }}>
+          <div className="mx-auto max-w-6xl px-6 py-14 sm:py-16">
+            <div className="mx-auto max-w-3xl text-center">
+              <span className="text-xs font-bold uppercase tracking-[0.18em]" style={{ color: "var(--accent-text)" }}>
+                {es ? "GUÍA DE INSTALACIÓN" : "INSTALLATION GUIDE"}
+              </span>
+              <h2 className="mt-3 text-3xl font-bold sm:text-4xl" style={{ color: "var(--text)", fontFamily: "Poppins" }}>
+                {es ? "¿Primera vez instalando FIA'O?" : "Installing FIA'O for the first time?"}
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {es
+                  ? "No necesitas conocimientos técnicos. Sigue estos pasos desde tu teléfono Android y tendrás FIA'O lista en unos minutos."
+                  : "No technical knowledge needed. Follow these steps on your Android phone and FIA'O will be ready in a few minutes."}
+              </p>
+            </div>
+
+            <div className="mt-10 grid gap-5 md:grid-cols-3">
+              <article className="rounded-2xl border p-6" style={{ backgroundColor: "var(--white)", borderColor: "var(--border-cream)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold" style={{ backgroundColor: "#FFF4B8", color: "#8B6500" }}>01</span>
+                  <Download className="h-6 w-6" style={{ color: "#B91C1C" }} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold" style={{ color: "var(--text)" }}>
+                  {es ? "Descarga FIA'O" : "Download FIA'O"}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  {es
+                    ? "Pulsa «Descargar APK» en la tarjeta de arriba. Espera a que termine la descarga; el archivo se guardará normalmente en Descargas."
+                    : "Tap “Download APK” in the card above. Wait for the download to finish; the file is usually saved in Downloads."}
+                </p>
+              </article>
+
+              <article className="rounded-2xl border p-6" style={{ backgroundColor: "var(--white)", borderColor: "var(--border-cream)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold" style={{ backgroundColor: "#FFF4B8", color: "#8B6500" }}>02</span>
+                  <FolderOpen className="h-6 w-6" style={{ color: "#B91C1C" }} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold" style={{ color: "var(--text)" }}>
+                  {es ? "Abre el archivo" : "Open the file"}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  {es
+                    ? "Cuando termine, toca la notificación de descarga. Si ya desapareció, abre Archivos o Mis archivos, entra en Descargas y selecciona el archivo de FIA'O."
+                    : "When it finishes, tap the download notification. If it has disappeared, open Files, go to Downloads, and select the FIA'O file."}
+                </p>
+              </article>
+
+              <article className="rounded-2xl border p-6" style={{ backgroundColor: "var(--white)", borderColor: "var(--border-cream)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full text-sm font-extrabold" style={{ backgroundColor: "#FFF4B8", color: "#8B6500" }}>03</span>
+                  <ShieldCheck className="h-6 w-6" style={{ color: "#B91C1C" }} />
+                </div>
+                <h3 className="mt-5 text-lg font-bold" style={{ color: "var(--text)" }}>
+                  {es ? "Autoriza e instala" : "Allow and install"}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  {es
+                    ? "Si Android lo solicita, activa «Permitir desde esta fuente» para el navegador o la aplicación Archivos que abriste. Regresa, pulsa Instalar y espera."
+                    : "If Android asks, enable “Allow from this source” for the browser or Files app you used. Go back, tap Install, and wait."}
+                </p>
+              </article>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-4 rounded-2xl border p-5 sm:flex-row sm:items-start" style={{ backgroundColor: "var(--white)", borderColor: "var(--border-cream)" }}>
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl" style={{ backgroundColor: "#E8F5E9", color: "#247A3D" }}>
+                <CheckCircle2 className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="font-bold" style={{ color: "var(--text)" }}>
+                  {es ? "¡Listo! Ya puedes abrir FIA'O" : "That's it! You can now open FIA'O"}
+                </h3>
+                <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                  {es
+                    ? "Busca el icono de FIA'O en tu pantalla de aplicaciones e inicia sesión. Si activaste «Permitir desde esta fuente», puedes desactivarlo después desde los ajustes de Android."
+                    : "Find the FIA'O icon in your apps and sign in. If you enabled “Allow from this source”, you can turn it off again in Android settings."}
+                </p>
+              </div>
+            </div>
+
+            <div className="mx-auto mt-6 max-w-3xl text-center">
+              <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>
+                {es
+                  ? "Importante: descarga FIA'O únicamente desde esta página oficial. No necesitas desactivar Play Protect ni permitir instalaciones para todas las aplicaciones. Los nombres de los menús pueden variar según la marca y versión de Android."
+                  : "Important: only download FIA'O from this official page. You do not need to disable Play Protect or allow installs for every app. Menu names may vary by Android version and device brand."}
+              </p>
             </div>
           </div>
         </section>
