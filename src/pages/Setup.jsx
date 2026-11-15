@@ -11,7 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { withBase } from "@/lib/withBase";
 // Pantalla que aparece después de iniciar sesión cuando todavía falta información del negocio.
 export default function Setup() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
   const { user, logout } = useAuth();
   const location = useLocation();
   const queryClient = useQueryClient();
@@ -90,8 +90,25 @@ export default function Setup() {
           <div className="grid sm:grid-cols-2 gap-4 mb-8">
             <Field icon={Store} label={t("Store name *")} name="store_name" value={info.store_name} onChange={onInfo} placeholder="Minisúper Doña Chela" hint={t("Your customers will see it in the reminders you send them.")} />
             <Field icon={Mail} label={t("RUC / ID")} name="ruc" value={info.ruc} onChange={onInfo} placeholder={t("Optional")} />
-            <div className="sm:col-span-2">
-              <Field icon={MapPin} label={t("Address")} name="address" value={info.address} onChange={onInfo} placeholder={t("Optional")} />
+            <div className="sm:col-span-2 rounded-xl p-4" style={{ backgroundColor: "var(--white)", border: "1px solid var(--border-cream)" }}>
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin className="w-4 h-4" style={{ color: "var(--accent-text)" }} />
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+                  {language === "es" ? "Ubicación de la tienda (opcional)" : "Store location (optional)"}
+                </h3>
+              </div>
+              <p className="text-xs mb-4" style={{ color: "var(--text-muted)" }}>
+                {language === "es" ? "Completa los datos que tengas para identificar dónde está tu tienda." : "Fill in whichever details you have to identify your store's location."}
+              </p>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <Field icon={MapPin} label={language === "es" ? "Calle o avenida" : "Street or avenue"} name="street" value={info.street} onChange={onInfo} placeholder={t("Optional")} />
+                <Field icon={MapPin} label="Corregimiento" name="corregimiento" value={info.corregimiento} onChange={onInfo} placeholder={t("Optional")} />
+                <Field icon={MapPin} label={language === "es" ? "Distrito" : "District"} name="district" value={info.district} onChange={onInfo} placeholder={t("Optional")} />
+                <Field icon={MapPin} label={language === "es" ? "Provincia" : "Province"} name="province" value={info.province} onChange={onInfo} placeholder={t("Optional")} />
+                <div className="sm:col-span-2">
+                  <Field icon={MapPin} label={language === "es" ? "Local, plaza o referencia adicional" : "Store, plaza or additional reference"} name="address_reference" value={info.address_reference} onChange={onInfo} placeholder={t("Optional")} />
+                </div>
+              </div>
             </div>
           </div>
 

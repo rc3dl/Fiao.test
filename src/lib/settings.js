@@ -65,7 +65,17 @@ export function validateProfile(form) {
     if (v.length > MAX_TEXT) return { error: `${FIELD_LABELS[key]} is too long (maximum ${MAX_TEXT} characters).` };
     values[key] = v;
   }
-  values.address = serializeStoreLocation(form);
+  // Compatibilidad: si algún formulario antiguo todavía envía "address",
+  // se conserva como referencia en vez de descartarlo.
+  const hasStructuredLocation = ["street", "corregimiento", "district", "province", "address_reference"]
+    .some((key) => String(form[key] ?? "").trim());
+  const locationForm = {
+    ...form,
+    address_reference: hasStructuredLocation
+      ? form.address_reference
+      : (form.address_reference || form.address || ""),
+  };
+  values.address = serializeStoreLocation(locationForm);
   const phoneError = validatePhone(values.phone);
   if (phoneError) return { error: phoneError };
   return { values };
