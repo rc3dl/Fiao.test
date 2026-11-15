@@ -9,6 +9,7 @@ import {
   ChevronDown,
   CreditCard,
   Download,
+  FolderOpen,
   MessageCircle,
   Package,
   ShieldCheck,
